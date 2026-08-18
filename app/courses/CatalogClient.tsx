@@ -4,14 +4,14 @@ import { useMemo, useState } from "react";
 import { CourseCard } from "../components";
 import { courses } from "../data";
 
-const filters = ["همه", "پایه", "حرفه‌ای", "شیرینی‌پزی", "نان"] as const;
+const filters = ["همه", "حضوری", "آنلاین"] as const;
 
 export function CatalogClient() {
   const [active, setActive] = useState<(typeof filters)[number]>("همه");
   const [query, setQuery] = useState("");
 
   const visible = useMemo(() => courses.filter((course) => {
-    const matchesCategory = active === "همه" || course.category === active;
+    const matchesCategory = active === "همه" || course.format === active;
     const matchesQuery = course.title.includes(query.trim()) || course.subtitle.includes(query.trim());
     return matchesCategory && matchesQuery;
   }), [active, query]);
@@ -19,7 +19,7 @@ export function CatalogClient() {
   return (
     <>
       <div className="catalog-tools">
-        <div className="filter-list" aria-label="فیلتر موضوع دوره">
+        <div className="filter-list" aria-label="فیلتر شیوه برگزاری دوره">
           {filters.map((filter) => (
             <button key={filter} type="button" className={active === filter ? "active" : ""} onClick={() => setActive(filter)}>
               {filter === "همه" ? "همه دوره‌ها" : filter}

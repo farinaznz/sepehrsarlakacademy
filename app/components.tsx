@@ -4,11 +4,20 @@ import type { Course } from "./data";
 export function Brand() {
   return (
     <Link className="brand" href="/" aria-label="آکادمی سپهر سرلک، صفحه نخست">
-      <span className="brand-mark">س</span>
-      <span className="brand-copy">
-        <b>سپهر سرلک</b>
-        <small>آکادمی آشپزی</small>
-      </span>
+      <span
+        className="brand-symbol"
+        aria-hidden="true"
+        style={{
+          display: "block",
+          width: 72,
+          height: 52,
+          flex: "0 0 72px",
+          backgroundImage: "url('/favicon.svg')",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "contain",
+        }}
+      />
     </Link>
   );
 }
@@ -20,9 +29,8 @@ export function SiteHeader() {
         <Brand />
         <nav className="desktop-nav" aria-label="راهبری اصلی">
           <Link href="/courses">دوره‌ها</Link>
-          <Link href="/#method">روش آموزش</Link>
-          <Link href="/#chef">درباره سپهر</Link>
-          <Link href="/#journal">مجله</Link>
+          <Link href="/journal">مجله</Link>
+          <Link href="/#chef">درباره آکادمی</Link>
         </nav>
         <div className="header-actions">
           <Link className="text-link desktop-only" href="/courses">ورود هنرجویان</Link>
@@ -31,10 +39,10 @@ export function SiteHeader() {
             <summary aria-label="باز کردن منو"><span></span><span></span></summary>
             <nav aria-label="راهبری موبایل">
               <Link href="/courses">دوره‌ها</Link>
-              <Link href="/#method">روش آموزش</Link>
-              <Link href="/#chef">درباره سپهر</Link>
-              <Link href="/#journal">مجله</Link>
+              <Link href="/journal">مجله</Link>
+              <Link href="/#chef">درباره آکادمی</Link>
               <Link href="/courses">ورود هنرجویان</Link>
+              <Link href="/courses">انتخاب دوره</Link>
             </nav>
           </details>
         </div>
@@ -59,6 +67,7 @@ export function SiteFooter() {
         </div>
         <div>
           <h3>همراهی</h3>
+          <Link href="/journal">مجله آکادمی</Link>
           <Link href="/courses">مشاوره انتخاب دوره</Link>
           <Link href="/courses">پرسش‌های متداول</Link>
           <Link href="/courses">قوانین آکادمی</Link>
@@ -96,7 +105,7 @@ export function SectionHeading({
 }
 
 export function CourseCard({ course, priority = false }: { course: Course; priority?: boolean }) {
-  const href = course.slug === "foundations" ? "/courses/foundations" : "/courses/foundations";
+  const href = course.href;
   return (
     <article className="course-card">
       <Link className="course-image" href={href} aria-label={`مشاهده دوره ${course.title}`}>
@@ -104,12 +113,12 @@ export function CourseCard({ course, priority = false }: { course: Course; prior
         <span>{course.format}</span>
       </Link>
       <div className="course-card-body">
-        <div className="course-kicker"><span>{course.category}</span><span>{course.level}</span></div>
+        <div className="course-kicker"><span>{course.category}</span><span>{course.availability}</span></div>
         <h3><Link href={href}>{course.title}</Link></h3>
         <p>{course.subtitle}</p>
         <div className="course-meta"><span>{course.duration}</span><span>{course.lessons}</span></div>
         <div className="course-card-footer">
-          <strong>{course.price} <small>تومان</small></strong>
+          <strong>{course.price}</strong>
           <Link className="arrow-link" href={href}>جزئیات دوره <span>←</span></Link>
         </div>
       </div>

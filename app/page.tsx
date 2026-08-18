@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { CourseCard, SectionHeading } from "./components";
 import { courses } from "./data";
+import { articles } from "./journal/data";
+import { formatArticleDate } from "./journal/utils";
 
 export default function Home() {
   return (
     <>
       <section className="home-hero">
         <div className="hero-visual">
-          <img src="/media/hero.jpg" alt="سپهر سرلک در حال آموزش در آشپزخانه آکادمی" />
-          <div className="hero-caption"><span>01</span><p>تکنیک، تمرین، تکرار<br />زیر نظر یک شف حرفه‌ای</p></div>
+          <img src="/media/hero-classroom.jpg" alt="کلاس حضوری آشپزی در آکادمی سپهر سرلک" />
+          <div className="hero-caption"><p>تکنیک، تمرین، تکرار<br />در یک آشپزخانه واقعی</p></div>
         </div>
         <div className="hero-content">
           <div>
@@ -28,20 +30,16 @@ export default function Home() {
         <div className="container">
           <SectionHeading eyebrow="مسیر یادگیری" title="از هرجا هستید، جدی یاد بگیرید." copy="دو شیوه آموزش با یک استاندارد؛ تمرین واقعی، بازخورد دقیق و همراهی تا رسیدن به مهارت." />
           <div className="path-grid">
-            <Link href="/courses" className="path-card path-card-dark">
+            <Link href="/courses" className="path-card path-card-image path-card-onsite">
+              <img src="/media/real-course-foundations.jpg" alt="نمونه بشقاب دوره حضوری آشپزی سطح مبانی" />
               <span className="path-number">01</span>
               <div><small>تجربه در آشپزخانه</small><h3>دوره‌های حضوری</h3><p>کلاس‌های کم‌جمعیت، تجهیزات حرفه‌ای و بازخورد مستقیم استاد.</p></div>
               <span className="path-arrow">←</span>
             </Link>
-            <Link href="/courses" className="path-card path-card-image">
-              <img src="/media/course-foundations.jpg" alt="بشقاب حرفه‌ای آماده‌شده در آکادمی" />
+            <Link href="/courses" className="path-card path-card-image path-card-online">
+              <img src="/media/real-course-online.jpg" alt="آموزش تکنیک پوست کندن فلفل در دوره آنلاین آشپزی" />
               <span className="path-number">02</span>
               <div><small>یادگیری منعطف</small><h3>دوره‌های آنلاین</h3><p>درس‌های مرحله‌به‌مرحله، تمرین عملی و پشتیبانی آموزشی.</p></div>
-              <span className="path-arrow">←</span>
-            </Link>
-            <Link href="/courses" className="path-card path-card-accent">
-              <span className="path-number">03</span>
-              <div><small>برای آینده شغلی</small><h3>مسیر حرفه‌ای</h3><p>برنامه‌ای منسجم برای ورود جدی به صنعت غذا و مهمان‌نوازی.</p></div>
               <span className="path-arrow">←</span>
             </Link>
           </div>
@@ -62,8 +60,8 @@ export default function Home() {
 
       <section className="manifesto section">
         <div className="container manifesto-grid">
-          <div className="manifesto-index"><span>روش ما</span><strong>03</strong></div>
           <div className="manifesto-copy">
+            <span className="eyebrow">روش ما</span>
             <p className="quote-mark">“</p>
             <h2>دستور پخت را می‌توان پیدا کرد؛ چیزی که باید آموخت، <em>درکِ پشت آن</em> است.</h2>
             <p>آموزش در آکادمی بر حفظ کردن متکی نیست. هر درس از شناخت ماده اولیه شروع می‌شود، با فهم تکنیک ادامه پیدا می‌کند و به توانایی تصمیم‌گیری در آشپزخانه می‌رسد.</p>
@@ -77,7 +75,7 @@ export default function Home() {
       </section>
 
       <section className="chef-section" id="chef">
-        <div className="chef-image"><img src="/media/story.jpg" alt="نمونه‌ای از تجربه و استاندارد ارائه غذا در آکادمی" /></div>
+        <div className="chef-image"><img src="/media/sepehr-about-bw.jpg" alt="سپهر سرلک، شف و بنیان‌گذار آکادمی" /></div>
         <div className="chef-copy">
           <span className="eyebrow eyebrow-light">شف و بنیان‌گذار آکادمی</span>
           <h2>سپهر سرلک</h2>
@@ -102,13 +100,18 @@ export default function Home() {
 
       <section className="journal-section section" id="journal">
         <div className="container">
-          <div className="heading-row"><SectionHeading eyebrow="مجله آکادمی" title="خواندنی برای آشپزهای کنجکاو" /><Link className="arrow-link large" href="/courses">همه مطالب <span>←</span></Link></div>
+          <div className="heading-row"><SectionHeading eyebrow="مجله آکادمی" title="خواندنی برای آشپزهای کنجکاو" /><Link className="arrow-link large" href="/journal">همه مطالب <span>←</span></Link></div>
           <div className="journal-grid">
-            <article className="journal-main"><img src="/media/course-bread.jpg" alt="بافت داخلی نان خمیرترش" /><div><small>دانش مواد اولیه · ۸ دقیقه</small><h3>خمیرترش؛ گفت‌وگوی زمان، دما و باکتری</h3><Link className="arrow-link" href="/courses">ادامه مطلب <span>←</span></Link></div></article>
+            <article className="journal-main"><img src={articles[0].image} alt={articles[0].imageAlt} /><div><small>{articles[0].category} · {formatArticleDate(articles[0].date)}</small><h3>{articles[0].title}</h3><p>{articles[0].summary}</p><Link className="arrow-link" href={articles[0].href}>ادامه مطلب <span>←</span></Link></div></article>
             <div className="journal-list">
-              <article><span>تکنیک</span><h3>چطور چاقوی آشپزخانه را انتخاب و نگهداری کنیم؟</h3><small>۶ دقیقه مطالعه</small></article>
-              <article><span>مسیر حرفه‌ای</span><h3>اولین روز در یک آشپزخانه حرفه‌ای</h3><small>۹ دقیقه مطالعه</small></article>
-              <article><span>نگاه شف</span><h3>چرا سادگی در بشقاب، دشوارترین انتخاب است؟</h3><small>۵ دقیقه مطالعه</small></article>
+              {articles.slice(1, 4).map((article) => (
+                <article key={article.title}>
+                  <Link className="journal-list-link" href={article.href}>
+                    <img src={article.image} alt="" loading="lazy" />
+                    <div><span>{article.category}</span><h3>{article.title}</h3><small>{formatArticleDate(article.date)}</small></div>
+                  </Link>
+                </article>
+              ))}
             </div>
           </div>
         </div>
