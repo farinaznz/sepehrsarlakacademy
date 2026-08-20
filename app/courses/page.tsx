@@ -7,14 +7,7 @@ export const metadata: Metadata = {
   description: "دوره‌های حضوری و آنلاین آشپزی حرفه‌ای آکادمی سپهر سرلک.",
 };
 
-type CoursesPageProps = {
-  searchParams: Promise<{ format?: string | string[] }>;
-};
-
-export default async function CoursesPage({ searchParams }: CoursesPageProps) {
-  const format = (await searchParams).format;
-  const initialFilter = format === "onsite" ? "حضوری" : format === "online" ? "آنلاین" : "همه";
-
+export default function CoursesPage() {
   return (
     <>
       <section className="catalog-hero">
@@ -24,7 +17,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
         </div>
       </section>
       <section className="catalog-section section" id="catalog">
-        <div className="container"><CatalogClient initialFilter={initialFilter} /></div>
+        <div className="container"><CatalogClient /></div>
       </section>
       <section className="catalog-help">
         <div className="container catalog-help-inner"><div><span className="eyebrow">برای انتخاب مطمئن</span><h2>هنوز نمی‌دانید از کجا شروع کنید؟</h2></div><p>هدف، تجربه و زمانی که در اختیار دارید را با ما در میان بگذارید تا بهترین مسیر را پیشنهاد کنیم.</p><Link className="button" href="/contact">مشاوره انتخاب دوره</Link></div>

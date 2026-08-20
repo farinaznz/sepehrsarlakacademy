@@ -1,13 +1,14 @@
 import Link from "next/link";
 import type { ArticlePreview } from "./data";
 import { formatArticleDate } from "./utils";
+import { withBasePath } from "../site-path";
 
 export function ArticleCard({ article, priority = false }: { article: ArticlePreview; priority?: boolean }) {
   return (
     <article className="article-card">
       <Link className="article-card-image" href={article.href} aria-label={`خواندن ${article.title}`}>
         <img
-          src={article.cover.src}
+          src={withBasePath(article.cover.src)}
           alt={article.cover.alt}
           loading={priority ? "eager" : "lazy"}
           style={{ objectPosition: article.cover.position ?? "center" }}

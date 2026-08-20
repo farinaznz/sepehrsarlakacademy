@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Course } from "./data";
+import { withBasePath } from "./site-path";
 
 export function Brand() {
   return (
@@ -12,7 +13,7 @@ export function Brand() {
           width: 72,
           height: 52,
           flex: "0 0 72px",
-          backgroundImage: "url('/favicon.svg')",
+          backgroundImage: `url('${withBasePath("/favicon.svg")}')`,
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           backgroundSize: "contain",
@@ -110,7 +111,7 @@ export function CourseCard({ course, priority = false }: { course: Course; prior
   return (
     <article className="course-card">
       <Link className="course-image" href={href} aria-label={`مشاهده دوره ${course.title}`}>
-        <img src={course.image} alt="" loading={priority ? "eager" : "lazy"} />
+        <img src={withBasePath(course.image)} alt="" loading={priority ? "eager" : "lazy"} />
         <span>{course.format}</span>
       </Link>
       <div className="course-card-body">

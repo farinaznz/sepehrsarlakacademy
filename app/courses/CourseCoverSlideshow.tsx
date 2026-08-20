@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { withBasePath } from "../site-path";
 
 type CourseSlide = { src: string; alt: string };
 
@@ -25,7 +26,7 @@ export function CourseCoverSlideshow({ slides }: { slides: CourseSlide[] }) {
         <img
           key={slide.src}
           className={index === active ? "is-active" : ""}
-          src={slide.src}
+          src={withBasePath(slide.src)}
           alt={index === 0 ? slide.alt : ""}
           loading={index === 0 ? "eager" : "lazy"}
           aria-hidden={index !== active}

@@ -4,6 +4,7 @@ import { courses } from "./data";
 import { articlePreview, articles } from "./journal/data";
 import { formatArticleDate } from "./journal/utils";
 import { HomeHeroSlideshow } from "./HomeHeroSlideshow";
+import { withBasePath } from "./site-path";
 
 const heroSlides = [
   { src: "/media/hero-classroom.jpg", alt: "کلاس حضوری آشپزی در آکادمی سپهر سرلک", position: "56% center" },
@@ -43,13 +44,13 @@ export default function Home() {
           <SectionHeading eyebrow="مسیر یادگیری" title="از هرجا هستید، جدی یاد بگیرید." copy="دو شیوه آموزش با یک استاندارد؛ تمرین واقعی، بازخورد دقیق و همراهی تا رسیدن به مهارت." />
           <div className="path-grid">
             <Link href="/courses?format=onsite" className="path-card path-card-image path-card-onsite">
-              <img src="/media/real-course-foundations.jpg" alt="نمونه بشقاب دوره حضوری آشپزی سطح مبانی" />
+              <img src={withBasePath("/media/real-course-foundations.jpg")} alt="نمونه بشقاب دوره حضوری آشپزی سطح مبانی" />
               <span className="path-number">01</span>
               <div><small>تجربه در آشپزخانه</small><h3>دوره‌های حضوری</h3><p>کلاس‌های کم‌جمعیت، تجهیزات حرفه‌ای و بازخورد مستقیم استاد.</p></div>
               <span className="path-arrow">←</span>
             </Link>
             <Link href="/courses?format=online" className="path-card path-card-image path-card-online">
-              <img src="/media/real-course-online.jpg" alt="آموزش تکنیک پوست کندن فلفل در دوره آنلاین آشپزی" />
+              <img src={withBasePath("/media/real-course-online.jpg")} alt="آموزش تکنیک پوست کندن فلفل در دوره آنلاین آشپزی" />
               <span className="path-number">02</span>
               <div><small>یادگیری منعطف</small><h3>دوره‌های آنلاین</h3><p>درس‌های مرحله‌به‌مرحله، تمرین عملی و پشتیبانی آموزشی.</p></div>
               <span className="path-arrow">←</span>
@@ -87,7 +88,7 @@ export default function Home() {
       </section>
 
       <section className="chef-section" id="chef">
-        <div className="chef-image"><img src="/media/sepehr-about-classroom.jpg" alt="سپهر سرلک، شف و بنیان‌گذار آکادمی، هنگام آموزش" /></div>
+        <div className="chef-image"><img src={withBasePath("/media/sepehr-about-classroom.jpg")} alt="سپهر سرلک، شف و بنیان‌گذار آکادمی، هنگام آموزش" /></div>
         <div className="chef-copy">
           <span className="eyebrow eyebrow-light">شف و بنیان‌گذار آکادمی</span>
           <h2>سپهر سرلک</h2>
@@ -114,12 +115,12 @@ export default function Home() {
         <div className="container">
           <div className="heading-row"><SectionHeading eyebrow="مجله آکادمی" title="خواندنی برای آشپزهای کنجکاو" /><Link className="arrow-link large" href="/journal">همه مطالب <span>←</span></Link></div>
           <div className="journal-grid">
-            <article className="journal-main"><img src={journalArticles[0].cover.src} alt={journalArticles[0].cover.alt} /><div><small>{journalArticles[0].category.label} · {formatArticleDate(journalArticles[0].publishedAt)}</small><h3>{journalArticles[0].title}</h3><p>{journalArticles[0].summary}</p><Link className="arrow-link" href={journalArticles[0].href}>ادامه مطلب <span>←</span></Link></div></article>
+            <article className="journal-main"><img src={withBasePath(journalArticles[0].cover.src)} alt={journalArticles[0].cover.alt} /><div><small>{journalArticles[0].category.label} · {formatArticleDate(journalArticles[0].publishedAt)}</small><h3>{journalArticles[0].title}</h3><p>{journalArticles[0].summary}</p><Link className="arrow-link" href={journalArticles[0].href}>ادامه مطلب <span>←</span></Link></div></article>
             <div className="journal-list">
               {journalArticles.slice(1).map((article) => (
                 <article key={article.title}>
                   <Link className="journal-list-link" href={article.href}>
-                    <img src={article.cover.src} alt="" loading="lazy" />
+                    <img src={withBasePath(article.cover.src)} alt="" loading="lazy" />
                     <div><span>{article.category.label}</span><h3>{article.title}</h3><small>{formatArticleDate(article.publishedAt)}</small></div>
                   </Link>
                 </article>

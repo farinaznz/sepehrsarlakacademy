@@ -6,6 +6,7 @@ import { courses } from "../../data";
 import { courseContents } from "../content";
 import { CourseCoverSlideshow } from "../CourseCoverSlideshow";
 import { CourseBody } from "../CourseBody";
+import { withBasePath } from "../../site-path";
 
 type CoursePageProps = { params: Promise<{ slug: string }> };
 
@@ -19,13 +20,15 @@ export function generateStaticParams() {
   return courseContents.map((course) => ({ slug: course.slug }));
 }
 
+export const dynamicParams = false;
+
 export async function generateMetadata({ params }: CoursePageProps): Promise<Metadata> {
   const result = getCourse((await params).slug);
   if (!result) return {};
   return {
     title: result.course.title,
     description: result.course.subtitle,
-    openGraph: { images: [{ url: result.content.cover || result.course.image, alt: result.content.coverAlt }] },
+    openGraph: { images: [{ url: withBasePath(result.content.cover || result.course.image), alt: result.content.coverAlt }] },
   };
 }
 

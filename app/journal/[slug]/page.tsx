@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArticleContent } from "../ArticleContent";
 import { articlePreview, articles } from "../data";
 import { formatArticleDate } from "../utils";
+import { withBasePath } from "../../site-path";
 
 type ArticlePageProps = { params: Promise<{ slug: string }> };
 
@@ -15,13 +16,15 @@ export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
 }
 
+export const dynamicParams = false;
+
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const article = findArticle((await params).slug);
   if (!article) return {};
   return {
     title: article.title,
     description: article.summary,
-    openGraph: { images: [{ url: article.cover.src, alt: article.cover.alt }] },
+    openGraph: { images: [{ url: withBasePath(article.cover.src), alt: article.cover.alt }] },
   };
 }
 
@@ -44,7 +47,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         </div>
         <div className="article-hero-image">
           <img
-            src={article.cover.src}
+            src={withBasePath(article.cover.src)}
             alt={article.cover.alt}
             style={{ objectPosition: article.cover.position ?? "center" }}
           />
@@ -65,7 +68,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             <div className="heading-row"><div><span className="eyebrow">مطالب مرتبط</span><h2>در همین موضوع بخوانید</h2></div><Link className="arrow-link large" href="/journal">همه مطالب <span>←</span></Link></div>
             <div className="related-article-grid">
               {related.map((item) => (
-                <article key={item.id}><Link href={item.href}><img src={item.cover.src} alt={item.cover.alt} style={{ objectPosition: item.cover.position ?? "center" }} /><span>{item.category.label}</span><h3>{item.title}</h3></Link></article>
+                <article key={item.id}><Link href={item.href}><img src={withBasePath(item.cover.src)} alt={item.cover.alt} style={{ objectPosition: item.cover.position ?? "center" }} /><span>{item.category.label}</span><h3>{item.title}</h3></Link></article>
               ))}
             </div>
           </div>

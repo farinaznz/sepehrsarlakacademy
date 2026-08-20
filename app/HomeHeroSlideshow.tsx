@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { withBasePath } from "./site-path";
 
 type HeroSlide = {
   src: string;
@@ -23,7 +24,7 @@ export function HomeHeroSlideshow({ slides }: { slides: HeroSlide[] }) {
     <img
       key={slide.src}
       className={index === active ? "is-active" : ""}
-      src={slide.src}
+      src={withBasePath(slide.src)}
       alt={slide.alt}
       style={{ objectPosition: slide.position }}
       loading={index === 0 ? "eager" : "lazy"}

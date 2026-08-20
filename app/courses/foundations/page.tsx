@@ -5,6 +5,7 @@ import { courses } from "../../data";
 import { courseContents } from "../content";
 import { CourseBody } from "../CourseBody";
 import { CourseCoverSlideshow } from "../CourseCoverSlideshow";
+import { withBasePath } from "../../site-path";
 
 export const metadata: Metadata = {
   title: "دوره حضوری آشپزی – سطح مبانی",
@@ -54,7 +55,7 @@ export default function FoundationsCoursePage() {
       </section>
 
       <section className="instructor-section">
-        <div className="container instructor-grid"><div className="instructor-image"><img src="/media/sepehr-about-bw.jpg" alt="سپهر سرلک در آشپزخانه آکادمی" /></div><div><span className="eyebrow eyebrow-light">مدرسان دوره</span><h2>سپهر سرلک<br />و علی نادری</h2><p>تمام تمرین‌ها زیر نظر تیم آکادمی انجام می‌شود و هر هنرجو برای آماده‌سازی، اجرای بشقاب و تحلیل عملکرد خود بازخورد دریافت می‌کند.</p><div className="instructor-metrics"><span><strong>۶</strong> جلسه عملی</span><span><strong>۱۶</strong> نفر ظرفیت</span></div></div></div>
+        <div className="container instructor-grid"><div className="instructor-image"><img src={withBasePath("/media/sepehr-about-bw.jpg")} alt="سپهر سرلک در آشپزخانه آکادمی" /></div><div><span className="eyebrow eyebrow-light">مدرسان دوره</span><h2>سپهر سرلک<br />و علی نادری</h2><p>تمام تمرین‌ها زیر نظر تیم آکادمی انجام می‌شود و هر هنرجو برای آماده‌سازی، اجرای بشقاب و تحلیل عملکرد خود بازخورد دریافت می‌کند.</p><div className="instructor-metrics"><span><strong>۶</strong> جلسه عملی</span><span><strong>۱۶</strong> نفر ظرفیت</span></div></div></div>
       </section>
 
       <section className="more-courses section"><div className="container"><div className="heading-row"><SectionHeading eyebrow="دیگر دوره‌ها" title="دوره‌ها و کارگاه‌های آکادمی" /><Link className="arrow-link large" href="/courses">همه دوره‌ها <span>←</span></Link></div><div className="course-grid">{courses.slice(1, 4).map((item) => <CourseCard key={item.slug} course={item} />)}</div></div></section>

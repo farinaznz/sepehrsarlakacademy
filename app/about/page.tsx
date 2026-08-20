@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { withBasePath } from "../site-path";
 
 export const metadata: Metadata = {
   title: "درباره آکادمی",
@@ -59,7 +60,7 @@ export default function AboutPage() {
       </section>
 
       <section className="about-founder">
-        <div className="about-founder-image"><img src="/media/about/sepehr-sarlak.jpg" alt="سپهر سرلک، بنیان‌گذار آکادمی" /></div>
+        <div className="about-founder-image"><img src={withBasePath("/media/about/sepehr-sarlak.jpg")} alt="سپهر سرلک، بنیان‌گذار آکادمی" /></div>
         <div className="about-founder-copy">
           <span className="eyebrow eyebrow-light">بنیان‌گذار آکادمی</span>
           <h2>سپهر سرلک</h2>
@@ -78,7 +79,7 @@ export default function AboutPage() {
           <div className="about-team-grid">
             {instructors.map((instructor, index) => (
               <article className="about-team-card" key={instructor.name}>
-                <div className="about-team-image"><img src={instructor.image} alt={instructor.alt} loading={index === 0 ? "eager" : "lazy"} /></div>
+                <div className="about-team-image"><img src={withBasePath(instructor.image)} alt={instructor.alt} loading={index === 0 ? "eager" : "lazy"} /></div>
                 <div><span>{instructor.specialty}</span><h3>{instructor.name}</h3><p>{instructor.bio}</p></div>
               </article>
             ))}

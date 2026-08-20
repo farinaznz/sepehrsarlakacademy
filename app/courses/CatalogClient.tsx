@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CourseCard } from "../components";
 import { courses } from "../data";
 
@@ -10,6 +10,15 @@ type CourseFilter = (typeof filters)[number];
 export function CatalogClient({ initialFilter = "همه" }: { initialFilter?: CourseFilter }) {
   const [active, setActive] = useState<CourseFilter>(initialFilter);
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const format = new URLSearchParams(window.location.search).get("format");
+    const filter = format === "onsite" ? "حضوری" : format === "online" ? "آنلاین" : null;
+    if (!filter) return;
+
+    const timer = window.setTimeout(() => setActive(filter), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const visible = useMemo(() => courses.filter((course) => {
     const matchesCategory = active === "همه" || course.format === active;

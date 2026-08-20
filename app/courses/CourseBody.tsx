@@ -1,4 +1,5 @@
 import type { CourseBodyBlock } from "./content-model";
+import { withBasePath } from "../site-path";
 
 function RichText({ html }: { html: string }) {
   return <span dangerouslySetInnerHTML={{ __html: html }} />;
@@ -27,7 +28,7 @@ function BodyBlock({ block }: { block: CourseBodyBlock }) {
     case "profile":
       return (
         <div className="course-body-profile">
-          <img src={block.image.src} alt={block.image.alt} loading="lazy" />
+          <img src={withBasePath(block.image.src)} alt={block.image.alt} loading="lazy" />
           <p><RichText html={block.html} /></p>
         </div>
       );

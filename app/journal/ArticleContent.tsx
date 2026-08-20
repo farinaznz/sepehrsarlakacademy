@@ -1,4 +1,5 @@
 import type { JournalBlock, RecipeDetails } from "./content-model";
+import { withBasePath } from "../site-path";
 
 function RichText({ html }: { html: string }) {
   return <span dangerouslySetInnerHTML={{ __html: html }} />;
@@ -33,14 +34,14 @@ function ContentBlock({ block }: { block: JournalBlock }) {
     case "image":
       return (
         <figure className="article-media">
-          <img src={block.src} alt={block.alt} loading="lazy" />
+          <img src={withBasePath(block.src)} alt={block.alt} loading="lazy" />
           {block.caption ? <figcaption>{block.caption}</figcaption> : null}
         </figure>
       );
     case "video":
       return (
         <figure className="article-media">
-          <video src={block.src} aria-label={block.title} controls preload="metadata" />
+          <video src={withBasePath(block.src)} aria-label={block.title} controls preload="metadata" />
         </figure>
       );
     case "quote":
