@@ -1,11 +1,18 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { normalizeArticle } from "./journal-content.mjs";
 
 const siteUrl = "https://sepehrsarlakacademy.com";
 const apiUrl = `${siteUrl}/wp-json/wp/v2`;
 const projectRoot = process.cwd();
 const mediaRoot = path.join(projectRoot, "public", "media", "journal");
 const outputFile = path.join(projectRoot, "app", "journal", "articles.json");
+const coverOverrides = new Map([
+  [4656, "/media/journal/covers/4656-cover.jpg"],
+]);
+const coverPositionOverrides = new Map([
+  [8311, "right center"],
+]);
 
 const namedEntities = {
   amp: "&",
@@ -55,7 +62,9 @@ function safeSlug(value, id) {
 
 function fileExtension(url, contentType = "") {
   const extension = path.extname(new URL(url).pathname).toLowerCase();
-  if (/^\.(avif|gif|jpe?g|png|webp)$/.test(extension)) return extension;
+  if (/^\.(avif|gif|jpe?g|mp4|png|webm|webp)$/.test(extension)) return extension;
+  if (contentType.includes("video/mp4")) return ".mp4";
+  if (contentType.includes("video/webm")) return ".webm";
   if (contentType.includes("png")) return ".png";
   if (contentType.includes("webp")) return ".webp";
   if (contentType.includes("avif")) return ".avif";
@@ -68,7 +77,7 @@ async function fetchJson(url) {
   return response.json();
 }
 
-async function downloadImage(url, basename, subdirectory = "") {
+async function downloadAsset(url, basename, subdirectory = "") {
   const response = await fetch(url, { headers: { "user-agent": "Academy journal migration" } });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${url}`);
   const extension = fileExtension(url, response.headers.get("content-type") ?? "");
@@ -120,7 +129,7 @@ const articles = await mapWithConcurrency(posts, 4, async (post) => {
 
   const localImages = await mapWithConcurrency(sourceImages, 4, async (url, index) => {
     try {
-      const localUrl = await downloadImage(url, `${post.id}-${index + 1}`, "content");
+      const localUrl = await downloadAsset(url, `${post.id}-${index + 1}`, "content");
       return [url, localUrl];
     } catch (error) {
       console.warn(`Could not download inline image ${url}:`, error.message);
@@ -130,16 +139,16 @@ const articles = await mapWithConcurrency(posts, 4, async (post) => {
   for (const [sourceUrl, localUrl] of localImages) content = content.replaceAll(sourceUrl, localUrl);
 
   const featured = mediaById.get(post.featured_media);
-  let image = "/media/article-chef-skills.jpg";
-  if (featured?.source_url) {
+  let image = coverOverrides.get(post.id) ?? "/media/article-chef-skills.jpg";
+  if (!coverOverrides.has(post.id) && featured?.source_url) {
     try {
-      image = await downloadImage(featured.source_url, `${post.id}-cover`, "covers");
+      image = await downloadAsset(featured.source_url, `${post.id}-cover`, "covers");
     } catch (error) {
       console.warn(`Could not download cover for post ${post.id}:`, error.message);
     }
   }
 
-  return {
+  const article = normalizeArticle({
     id: post.id,
     slug,
     title: plainText(post.title?.rendered),
@@ -150,7 +159,10 @@ const articles = await mapWithConcurrency(posts, 4, async (post) => {
     imageAlt: plainText(featured?.alt_text) || plainText(post.title?.rendered),
     href: `/journal/${encodeURIComponent(slug)}`,
     content,
-  };
+  });
+  const coverPosition = coverPositionOverrides.get(post.id);
+  if (coverPosition) article.cover.position = coverPosition;
+  return article;
 });
 
 await writeFile(outputFile, `${JSON.stringify(articles, null, 2)}\n`);

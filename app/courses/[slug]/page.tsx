@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { CourseCard } from "../../components";
 import { courses } from "../../data";
 import { courseContents } from "../content";
+import { CourseCoverSlideshow } from "../CourseCoverSlideshow";
+import { CourseBody } from "../CourseBody";
 
 type CoursePageProps = { params: Promise<{ slug: string }> };
 
@@ -31,6 +33,9 @@ export default async function MigratedCoursePage({ params }: CoursePageProps) {
   const result = getCourse((await params).slug);
   if (!result) notFound();
   const { course, content } = result;
+  const gallery = content.gallery?.length
+    ? content.gallery
+    : [{ src: content.cover || course.image, alt: content.coverAlt || course.title }];
   const related = courses.filter((item) => item.slug !== course.slug).slice(0, 3);
 
   return (
@@ -43,7 +48,7 @@ export default async function MigratedCoursePage({ params }: CoursePageProps) {
           <p>{course.subtitle}</p>
           <div className="detail-rating"><span>★★★★★</span><small>{course.availability}</small></div>
         </div>
-        <div className="detail-hero-image"><img src={content.cover || course.image} alt={content.coverAlt || course.title} /><span>{course.format} · {course.level}</span></div>
+        <div className="detail-hero-image"><CourseCoverSlideshow slides={gallery} /><span>{course.format} · {course.level}</span></div>
       </section>
 
       <section className="course-facts">
@@ -63,7 +68,7 @@ export default async function MigratedCoursePage({ params }: CoursePageProps) {
               <h2>آموزش ساختاریافته،<br />تمرین در مسیر حرفه‌ای</h2>
               <p>{content.summary || course.subtitle}</p>
             </div>
-            <div className="migrated-course-body" dangerouslySetInnerHTML={{ __html: content.content }} />
+            <CourseBody blocks={content.body} />
           </div>
           <aside className="enroll-card">
             <span className="enroll-label">شهریه دوره</span>

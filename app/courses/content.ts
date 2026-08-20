@@ -1,4 +1,5 @@
 import importedCourseContent from "./content.json";
+import type { CourseBodyBlock, CourseImage } from "./content-model";
 
 export type CourseContent = {
   id: number;
@@ -8,8 +9,8 @@ export type CourseContent = {
   summary: string;
   cover: string;
   coverAlt: string;
-  content: string;
+  gallery: CourseImage[];
+  body: CourseBodyBlock[];
 };
 
 export const courseContents = importedCourseContent as CourseContent[];
-

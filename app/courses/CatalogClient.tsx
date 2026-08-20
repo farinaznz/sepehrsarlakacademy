@@ -5,9 +5,10 @@ import { CourseCard } from "../components";
 import { courses } from "../data";
 
 const filters = ["همه", "حضوری", "آنلاین"] as const;
+type CourseFilter = (typeof filters)[number];
 
-export function CatalogClient() {
-  const [active, setActive] = useState<(typeof filters)[number]>("همه");
+export function CatalogClient({ initialFilter = "همه" }: { initialFilter?: CourseFilter }) {
+  const [active, setActive] = useState<CourseFilter>(initialFilter);
   const [query, setQuery] = useState("");
 
   const visible = useMemo(() => courses.filter((course) => {

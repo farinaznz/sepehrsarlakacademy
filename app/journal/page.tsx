@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { articles } from "./data";
+import { articlePreview, articles } from "./data";
 import { JournalClient } from "./JournalClient";
 
 export const metadata: Metadata = {
@@ -9,17 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default function JournalPage() {
-  const articlePreviews = articles.map((article) => ({
-    id: article.id,
-    slug: article.slug,
-    title: article.title,
-    category: article.category,
-    summary: article.summary,
-    date: article.date,
-    image: article.image,
-    imageAlt: article.imageAlt,
-    href: article.href,
-  }));
+  const articlePreviews = articles.map(articlePreview);
   return (
     <>
       <section className="journal-hero">

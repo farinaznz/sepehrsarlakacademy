@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { normalizeCourseContent } from "./course-content.mjs";
 
 const siteUrl = "https://sepehrsarlakacademy.com";
 const apiUrl = `${siteUrl}/wp-json/wp/v2`;
@@ -58,6 +59,27 @@ async function fetchJson(url) {
   return response.json();
 }
 
+async function fetchText(url) {
+  const response = await fetch(url, { headers: { "user-agent": "Academy course migration" } });
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${url}`);
+  return response.text();
+}
+
+function attributeValue(tag, name) {
+  const match = tag.match(new RegExp(`\\b${name}=(?:"([^"]*)"|'([^']*)')`, "i"));
+  return decodeEntities(match?.[1] ?? match?.[2] ?? "");
+}
+
+function productGallery(html, fallbackAlt) {
+  const seen = new Set();
+  return [...html.matchAll(/<img\b[^>]*\bdata-large_image=(?:"[^"]+"|'[^']+')[^>]*>/gi)]
+    .map(([tag]) => ({
+      source: attributeValue(tag, "data-large_image"),
+      alt: plainText(attributeValue(tag, "alt")) || fallbackAlt,
+    }))
+    .filter((image) => image.source.startsWith(`${siteUrl}/wp-content/uploads/`) && !seen.has(image.source) && seen.add(image.source));
+}
+
 async function downloadImage(url, basename, folder) {
   const response = await fetch(url, { headers: { "user-agent": "Academy course migration" } });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${url}`);
@@ -84,7 +106,7 @@ async function mapWithConcurrency(items, limit, mapper) {
 }
 
 await mkdir(path.dirname(outputFile), { recursive: true });
-const fields = "id,date,slug,title,excerpt,content,featured_media";
+const fields = "id,date,slug,link,title,excerpt,content,featured_media";
 const [products, onlineCourses] = await Promise.all([
   fetchJson(`${apiUrl}/product?per_page=100&_fields=${fields}`),
   fetchJson(`${apiUrl}/courses?per_page=100&_fields=${fields}`),
@@ -111,8 +133,10 @@ const contents = await mapWithConcurrency(records, 4, async (record) => {
 
   let cover = "";
   let coverAlt = plainText(record.title?.rendered);
+  let featuredSource = "";
   if (record.featured_media) {
     const media = await fetchJson(`${apiUrl}/media/${record.featured_media}?_fields=source_url,alt_text`);
+    featuredSource = media.source_url;
     coverAlt = plainText(media.alt_text) || coverAlt;
     try {
       cover = await downloadImage(media.source_url, `${localSlug}-cover`, "covers");
@@ -121,7 +145,32 @@ const contents = await mapWithConcurrency(records, 4, async (record) => {
     }
   }
 
-  return {
+  let sourceGallery = [];
+  if (record.id !== 4152 && record.link) {
+    try {
+      sourceGallery = productGallery(await fetchText(record.link), coverAlt);
+    } catch (error) {
+      console.warn(`Could not read gallery for ${localSlug}:`, error.message);
+    }
+  }
+  const additionalGallery = sourceGallery.filter((image) => image.source !== featuredSource);
+  const downloadedGallery = await mapWithConcurrency(additionalGallery, 4, async (image, index) => {
+    try {
+      return {
+        src: await downloadImage(image.source, `${localSlug}-${index + 1}`, "gallery"),
+        alt: image.alt,
+      };
+    } catch (error) {
+      console.warn(`Could not download gallery image ${image.source}:`, error.message);
+      return null;
+    }
+  });
+  const gallery = [
+    ...(cover ? [{ src: cover, alt: coverAlt }] : []),
+    ...downloadedGallery.filter(Boolean),
+  ];
+
+  return normalizeCourseContent({
     id: record.id,
     slug: localSlug,
     sourceType: record.id === 4152 ? "course" : "product",
@@ -129,8 +178,9 @@ const contents = await mapWithConcurrency(records, 4, async (record) => {
     summary: plainText(record.excerpt?.rendered),
     cover,
     coverAlt,
+    gallery,
     content,
-  };
+  });
 });
 
 contents.sort((a, b) => [...courseSlugs.values()].indexOf(a.slug) - [...courseSlugs.values()].indexOf(b.slug));

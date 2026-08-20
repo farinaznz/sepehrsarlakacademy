@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { articles } from "../data";
+import { ArticleContent } from "../ArticleContent";
+import { articlePreview, articles } from "../data";
 import { formatArticleDate } from "../utils";
 
 type ArticlePageProps = { params: Promise<{ slug: string }> };
@@ -20,31 +21,41 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
   return {
     title: article.title,
     description: article.summary,
-    openGraph: { images: [{ url: article.image, alt: article.imageAlt }] },
+    openGraph: { images: [{ url: article.cover.src, alt: article.cover.alt }] },
   };
 }
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const article = findArticle((await params).slug);
   if (!article) notFound();
-  const related = articles.filter((item) => item.id !== article.id && item.category === article.category).slice(0, 3);
+  const related = articles
+    .filter((item) => item.id !== article.id && item.category.id === article.category.id)
+    .slice(0, 3)
+    .map(articlePreview);
 
   return (
     <article className="article-page">
-      <header className="article-hero">
-        <div className="container article-hero-inner">
+      <header className="article-hero article-hero-split">
+        <div className="article-hero-copy">
           <Link className="article-back" href="/journal">مجله آکادمی <span>←</span></Link>
-          <div className="article-meta"><span>{article.category}</span><span>{formatArticleDate(article.date)}</span></div>
+          <div className="article-meta"><span>{article.category.label}</span><span>{formatArticleDate(article.publishedAt)}</span></div>
           <h1>{article.title}</h1>
           <p>{article.summary}</p>
         </div>
+        <div className="article-hero-image">
+          <img
+            src={article.cover.src}
+            alt={article.cover.alt}
+            style={{ objectPosition: article.cover.position ?? "center" }}
+          />
+          <span>{article.category.label}</span>
+        </div>
       </header>
-      <div className="container article-cover"><img src={article.image} alt={article.imageAlt} /></div>
       <div className="container article-layout">
-        <div className="article-body" dangerouslySetInnerHTML={{ __html: article.content }} />
+        <ArticleContent blocks={article.blocks} recipe={article.recipe} />
         <aside className="article-sidebar">
-          <div><span>موضوع</span><strong>{article.category}</strong></div>
-          <div><span>تاریخ انتشار</span><strong>{formatArticleDate(article.date)}</strong></div>
+          <div><span>موضوع</span><strong>{article.category.label}</strong></div>
+          <div><span>تاریخ انتشار</span><strong>{formatArticleDate(article.publishedAt)}</strong></div>
           <Link className="button" href="/courses">مشاهده دوره‌ها</Link>
         </aside>
       </div>
@@ -54,7 +65,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             <div className="heading-row"><div><span className="eyebrow">مطالب مرتبط</span><h2>در همین موضوع بخوانید</h2></div><Link className="arrow-link large" href="/journal">همه مطالب <span>←</span></Link></div>
             <div className="related-article-grid">
               {related.map((item) => (
-                <article key={item.id}><Link href={item.href}><img src={item.image} alt={item.imageAlt} /><span>{item.category}</span><h3>{item.title}</h3></Link></article>
+                <article key={item.id}><Link href={item.href}><img src={item.cover.src} alt={item.cover.alt} style={{ objectPosition: item.cover.position ?? "center" }} /><span>{item.category.label}</span><h3>{item.title}</h3></Link></article>
               ))}
             </div>
           </div>

@@ -30,18 +30,18 @@ export function SiteHeader() {
         <nav className="desktop-nav" aria-label="راهبری اصلی">
           <Link href="/courses">دوره‌ها</Link>
           <Link href="/journal">مجله</Link>
-          <Link href="/#chef">درباره آکادمی</Link>
+          <Link href="/about">درباره آکادمی</Link>
         </nav>
         <div className="header-actions">
-          <Link className="text-link desktop-only" href="/courses">ورود هنرجویان</Link>
+          <Link className="text-link desktop-only" href="/login">ورود هنرجویان</Link>
           <Link className="button button-small" href="/courses">انتخاب دوره</Link>
           <details className="mobile-menu">
             <summary aria-label="باز کردن منو"><span></span><span></span></summary>
             <nav aria-label="راهبری موبایل">
               <Link href="/courses">دوره‌ها</Link>
               <Link href="/journal">مجله</Link>
-              <Link href="/#chef">درباره آکادمی</Link>
-              <Link href="/courses">ورود هنرجویان</Link>
+              <Link href="/about">درباره آکادمی</Link>
+              <Link href="/login">ورود هنرجویان</Link>
               <Link href="/courses">انتخاب دوره</Link>
             </nav>
           </details>
@@ -63,19 +63,20 @@ export function SiteFooter() {
           <h3>آکادمی</h3>
           <Link href="/courses">همه دوره‌ها</Link>
           <Link href="/#method">روش آموزش</Link>
-          <Link href="/#chef">درباره ما</Link>
+          <Link href="/about">درباره ما</Link>
         </div>
         <div>
           <h3>همراهی</h3>
           <Link href="/journal">مجله آکادمی</Link>
-          <Link href="/courses">مشاوره انتخاب دوره</Link>
+          <Link href="/contact">مشاوره انتخاب دوره</Link>
           <Link href="/courses">پرسش‌های متداول</Link>
           <Link href="/courses">قوانین آکادمی</Link>
         </div>
         <div>
-          <h3>تماس</h3>
-          <p>تهران، ایران</p>
-          <a href="mailto:hello@sepehrsarlakacademy.com">hello@sepehrsarlakacademy.com</a>
+          <h3><Link href="/contact">تماس با ما</Link></h3>
+          <p>تهران، میدان تجریش</p>
+          <a href="tel:+989362233949" dir="ltr">+98 936 223 3949</a>
+          <a href="mailto:sepehrsarlakacademy@gmail.com">sepehrsarlakacademy@gmail.com</a>
         </div>
       </div>
       <div className="container footer-bottom">

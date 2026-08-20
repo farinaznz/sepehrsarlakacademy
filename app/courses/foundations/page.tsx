@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CourseCard, SectionHeading } from "../../components";
 import { courses } from "../../data";
+import { courseContents } from "../content";
+import { CourseBody } from "../CourseBody";
+import { CourseCoverSlideshow } from "../CourseCoverSlideshow";
 
 export const metadata: Metadata = {
   title: "دوره حضوری آشپزی – سطح مبانی",
@@ -9,8 +12,13 @@ export const metadata: Metadata = {
 };
 
 const course = courses[0];
+const courseContent = courseContents.find((item) => item.slug === course.slug);
 
 export default function FoundationsCoursePage() {
+  const gallery = courseContent?.gallery?.length
+    ? courseContent.gallery
+    : [{ src: course.image, alt: course.title }];
+
   return (
     <>
       <section className="detail-hero">
@@ -21,7 +29,7 @@ export default function FoundationsCoursePage() {
           <p>نخستین دوره از مجموعه آموزش‌های عملی آکادمی؛ از شناخت پروتئین و آماده‌سازی مواد اولیه تا روش‌های پخت و اجرای بشقاب در یک آشپزخانه حرفه‌ای.</p>
           <div className="detail-rating"><strong>ثبت‌نام باز</strong><small>دوره بعدی: پنجشنبه‌ها و جمعه‌ها، مرداد و شهریور ۱۴۰۵</small></div>
         </div>
-        <div className="detail-hero-image"><img src={course.image} alt="کارپاچیو، تصویر شاخص دوره حضوری آشپزی سطح مبانی" /><span>آموزش کاملاً عملی برای هر هنرجو</span></div>
+        <div className="detail-hero-image"><CourseCoverSlideshow slides={gallery} /><span>آموزش کاملاً عملی برای هر هنرجو</span></div>
       </section>
 
       <section className="course-facts"><div className="container facts-grid"><div><small>زمان‌بندی</small><strong>۶ جلسه ۸ ساعته</strong></div><div><small>ظرفیت</small><strong>۱۶ هنرجو</strong></div><div><small>محل برگزاری</small><strong>تهران، تجریش</strong></div><div><small>مدرسان</small><strong>سپهر سرلک و علی نادری</strong></div></div></section>
@@ -30,17 +38,7 @@ export default function FoundationsCoursePage() {
         <div className="container detail-layout">
           <div className="detail-content">
             <div className="detail-intro"><span className="eyebrow">درباره دوره</span><h2>از مفاهیم پایه<br />تا اجرای عملی</h2><p>مواد اولیه برای هر هنرجو به‌صورت جداگانه تأمین می‌شود. در هر جلسه، هنرجو بشقاب آموزش‌داده‌شده را آماده و پرزنت می‌کند و عملکرد او توسط مدرسان ارزیابی می‌شود.</p></div>
-            <div className="learning-outcomes">
-              <h3>در این دوره چه می‌آموزید؟</h3>
-              <ul><li><span>01</span>شناخت انواع پروتئین؛ گوشت قرمز، مرغ، ماهی و تخم‌مرغ</li><li><span>02</span>تکنیک‌های اصلی قصابی و آماده‌سازی مواد اولیه</li><li><span>03</span>روش‌های پخت مانند رُست، بریز، سوته و کنفی</li><li><span>04</span>اصول mise en place، بهداشت، نظم و زمان‌بندی</li><li><span>05</span>اجرای تمرینی بشقاب‌های کلاسیک و مدرن</li><li><span>06</span>آماده‌سازی و ارائه ۱۵ بشقاب نهایی توسط هنرجو</li></ul>
-            </div>
-            <div className="curriculum">
-              <div className="curriculum-head"><div><span className="eyebrow">ساختار آموزش</span><h2>تمرین در آشپزخانه واقعی</h2></div><p>۶ جلسه · مجموعاً ۴۸ ساعت</p></div>
-              <details open><summary><span><b>بخش ۱</b>پروتئین‌ها و آماده‌سازی</span></summary><div><p>شناخت گوشت قرمز، مرغ، ماهی و تخم‌مرغ و اجرای تکنیک‌های اصلی قصابی و آماده‌سازی.</p></div></details>
-              <details><summary><span><b>بخش ۲</b>روش‌های پخت</span></summary><div><p>تمرین روش‌هایی مانند رُست کردن، بریز کردن، سوته کردن و کنفی کردن.</p></div></details>
-              <details><summary><span><b>بخش ۳</b>نظم و مدیریت ایستگاه</span></summary><div><p>تمرین mise en place، بهداشت، نظم و زمان‌بندی در محیط حرفه‌ای آشپزخانه.</p></div></details>
-              <details><summary><span><b>بخش ۴</b>اجرا، پرزنت و ارزیابی</span></summary><div><p>آماده‌سازی بشقاب‌ها توسط هنرجو، ارائه نهایی و دریافت ارزیابی مستقیم از مدرسان.</p></div></details>
-            </div>
+            <CourseBody blocks={courseContent?.body ?? []} />
           </div>
 
           <aside className="enroll-card">
@@ -48,7 +46,7 @@ export default function FoundationsCoursePage() {
             <div className="enroll-price"><strong>۹۵ میلیون</strong><span>تومان</span></div>
             <p>پرداخت نقدی یا اقساط منعطف؛ پرداخت نقدی شامل ۵ میلیون تومان تخفیف است.</p>
             <Link className="button button-wide" href="https://wa.me/989362233949">پیام برای ثبت‌نام</Link>
-            <Link className="button button-ghost button-wide" href="https://wa.me/989362233949">مشاوره پیش از ثبت‌نام</Link>
+            <Link className="button button-ghost button-wide" href="/contact">مشاوره پیش از ثبت‌نام</Link>
             <ul><li>آموزش عملی در آشپزخانه صنعتی</li><li>مواد اولیه جداگانه برای هر هنرجو</li><li>پرسش و پاسخ تلگرامی تا سه ماه</li><li>گواهی‌نامه پایان دوره</li><li>ارزیابی عملکرد هر هنرجو</li></ul>
             <small>پیش‌نیاز: دوره آنلاین آشپزی – سطح پایه</small>
           </aside>
