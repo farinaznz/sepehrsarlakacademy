@@ -1,0 +1,22 @@
+[Unit]
+Description=Sepehr Sarlak Academy Next.js application
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/sepehr-sarlak-academy
+EnvironmentFile=/etc/sepehr-sarlak-academy.env
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3000
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target
