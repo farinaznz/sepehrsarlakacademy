@@ -60,7 +60,6 @@ export default function FoundationsCoursePage() {
 
       <section className="more-courses section"><div className="container"><div className="heading-row"><SectionHeading eyebrow="دیگر دوره‌ها" title="دوره‌ها و کارگاه‌های آکادمی" /><Link className="arrow-link large" href="/courses">همه دوره‌ها <span>←</span></Link></div><div className="course-grid">{courses.slice(1, 4).map((item) => <CourseCard key={item.slug} course={item} />)}</div></div></section>
 
-      <section className="detail-final" id="enroll"><div className="container"><span className="eyebrow eyebrow-light">ثبت‌نام دوره حضوری</span><h2>پایه حرفه‌ای شما<br />از تمرین ساخته می‌شود.</h2><div><div className="enroll-price light"><strong>۹۵ میلیون</strong><span>تومان</span></div><Link className="button button-light" href="https://wa.me/989362233949">پیام در واتس‌اپ</Link></div></div></section>
     </>
   );
 }
