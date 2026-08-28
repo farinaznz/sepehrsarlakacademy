@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Course } from "./data";
+import { MobileMenu } from "./MobileMenu";
 import { withBasePath } from "./site-path";
 
 export function Brand() {
@@ -36,16 +37,7 @@ export function SiteHeader() {
         <div className="header-actions">
           <Link className="text-link desktop-only" href="/login">ورود هنرجویان</Link>
           <Link className="button button-small" href="/courses">انتخاب دوره</Link>
-          <details className="mobile-menu">
-            <summary aria-label="باز کردن منو"><span></span><span></span></summary>
-            <nav aria-label="راهبری موبایل">
-              <Link href="/courses">دوره‌ها</Link>
-              <Link href="/journal">مجله</Link>
-              <Link href="/about">درباره آکادمی</Link>
-              <Link href="/login">ورود هنرجویان</Link>
-              <Link href="/courses">انتخاب دوره</Link>
-            </nav>
-          </details>
+          <MobileMenu />
         </div>
       </div>
     </header>
