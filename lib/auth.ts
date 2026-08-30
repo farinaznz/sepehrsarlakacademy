@@ -46,6 +46,9 @@ export const auth = betterAuth({
       "/phone-number/verify": { window: 15 * 60, max: 10 },
     },
   },
+  advanced: {
+    skipTrailingSlashes: true,
+  },
   session: {
     expiresIn: 60 * 60 * 24 * 30,
     updateAge: 60 * 60 * 24,
