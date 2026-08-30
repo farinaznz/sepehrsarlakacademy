@@ -20,6 +20,12 @@ jobs:
       BETTER_AUTH_SECRET: build-only-secret-with-at-least-32-characters
       BETTER_AUTH_URL: http://localhost:3000
       AUTH_FAKE_OTP_ENABLED: "false"
+      SMTP_HOST: smtp.example.com
+      SMTP_PORT: "587"
+      SMTP_SECURE: "false"
+      SMTP_USER: build@example.com
+      SMTP_PASSWORD: build-only-password
+      SMTP_FROM: build@example.com
     steps:
       - name: Checkout
         uses: actions/checkout@v6

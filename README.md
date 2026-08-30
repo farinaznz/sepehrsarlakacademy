@@ -14,6 +14,12 @@ connection is created. `AUTH_FAKE_OTP_ENABLED=true` shows generated OTP codes in
 the login screen for local/staging use; disable it when real SMS and email
 delivery adapters are configured.
 
+Production email OTP delivery uses authenticated SMTP through Nodemailer. Set
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, and
+`SMTP_FROM`; fake OTP previews are unavailable when `NODE_ENV=production` even
+if fake delivery is accidentally enabled. OTP delivery and verification routes
+use Better Auth's PostgreSQL-backed per-IP rate limits.
+
 Comma-separated `AUTH_ADMIN_EMAILS` and `AUTH_ADMIN_PHONES` values bootstrap the
 admin role when a matching user completes their first OTP login. Iranian mobile
 numbers are stored in `+989…` format. An admin can then grant or revoke course

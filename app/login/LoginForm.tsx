@@ -12,8 +12,8 @@ function latinDigits(value: string) {
     .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
 }
 
-export function LoginForm({ returnTo }: { returnTo: string }) {
-  const [method, setMethod] = useState<Method>("phone");
+export function LoginForm({ returnTo, phoneEnabled, fakePreviewEnabled }: { returnTo: string; phoneEnabled: boolean; fakePreviewEnabled: boolean }) {
+  const [method, setMethod] = useState<Method>(phoneEnabled ? "phone" : "email");
   const [identifier, setIdentifier] = useState("");
   const [normalizedIdentifier, setNormalizedIdentifier] = useState("");
   const [code, setCode] = useState("");
@@ -54,6 +54,7 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
       setStep("code");
       setMessage("کد تا پنج دقیقه معتبر است و حداکثر سه بار می‌توانید آن را امتحان کنید.");
 
+      if (!fakePreviewEnabled) return;
       const preview = await fetch("/api/auth/fake-otp/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -102,7 +103,7 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
       {step === "identifier" ? (
         <>
           <div className="login-methods" role="tablist" aria-label="روش ورود">
-            <button className={method === "phone" ? "active" : ""} type="button" onClick={() => switchMethod("phone")}>شماره همراه</button>
+            {phoneEnabled ? <button className={method === "phone" ? "active" : ""} type="button" onClick={() => switchMethod("phone")}>شماره همراه</button> : null}
             <button className={method === "email" ? "active" : ""} type="button" onClick={() => switchMethod("email")}>ایمیل</button>
           </div>
           <form className="login-form" onSubmit={requestCode}>

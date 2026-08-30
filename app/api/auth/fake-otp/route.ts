@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const env = getServerEnv();
-  if (!env.AUTH_FAKE_OTP_ENABLED) {
+  if (!env.AUTH_FAKE_OTP_ENABLED || env.NODE_ENV === "production") {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 

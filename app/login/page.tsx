@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "../../lib/auth";
 import { LoginForm } from "./LoginForm";
+import { getServerEnv } from "../../lib/env";
 
 export const metadata: Metadata = {
   title: "ورود هنرجویان",
@@ -23,6 +24,8 @@ export default async function LoginPage({
   const returnTo = requestedReturnTo?.startsWith("/") && !requestedReturnTo.startsWith("//")
     ? requestedReturnTo
     : "/dashboard";
+  const env = getServerEnv();
+  const fakePreviewEnabled = env.AUTH_FAKE_OTP_ENABLED && env.NODE_ENV !== "production";
 
   return (
     <section className="login-page">
@@ -37,7 +40,7 @@ export default async function LoginPage({
         </div>
       </div>
       <div className="login-panel">
-        <LoginForm returnTo={returnTo} />
+        <LoginForm returnTo={returnTo} phoneEnabled={env.AUTH_FAKE_OTP_ENABLED} fakePreviewEnabled={fakePreviewEnabled} />
       </div>
     </section>
   );

@@ -15,9 +15,25 @@ const serverEnvSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),
+  SMTP_HOST: z.string().default(""),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
+  SMTP_SECURE: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
+  SMTP_USER: z.string().default(""),
+  SMTP_PASSWORD: z.string().default(""),
+  SMTP_FROM: z.string().default(""),
   AUTH_ADMIN_EMAILS: z.string().default(""),
   AUTH_ADMIN_PHONES: z.string().default(""),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+}).superRefine((env, context) => {
+  if (env.AUTH_FAKE_OTP_ENABLED) return;
+  for (const key of ["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM"] as const) {
+    if (!env[key]) {
+      context.addIssue({ code: "custom", path: [key], message: "is required when fake OTP delivery is disabled" });
+    }
+  }
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

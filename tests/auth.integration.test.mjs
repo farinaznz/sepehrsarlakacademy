@@ -41,7 +41,7 @@ test("email and phone OTP create sessions with protected learning access", { ski
       BETTER_AUTH_URL: origin,
       AUTH_FAKE_OTP_ENABLED: "true",
       HOSTNAME: "127.0.0.1",
-      NODE_ENV: "production",
+      NODE_ENV: "test",
       PORT: String(port),
     },
     stdio: ["ignore", "pipe", "pipe"],

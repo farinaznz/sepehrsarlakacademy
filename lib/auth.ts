@@ -8,6 +8,7 @@ import { getServerEnv } from "./env";
 import { rememberFakeOtp } from "./fake-otp";
 import { normalizeIranianPhone } from "./phone";
 import { ensureUserFoundation, writeAuditRecord } from "./auth-foundation";
+import { deliverEmailOtp } from "./email";
 
 const env = getServerEnv();
 const otpExpiresIn = 5 * 60;
@@ -33,6 +34,18 @@ export const auth = betterAuth({
     schema,
   }),
   emailAndPassword: { enabled: false },
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+    window: 60,
+    max: 100,
+    customRules: {
+      "/email-otp/send-verification-otp": { window: 15 * 60, max: 5 },
+      "/phone-number/send-otp": { window: 15 * 60, max: 5 },
+      "/sign-in/email-otp": { window: 15 * 60, max: 10 },
+      "/phone-number/verify": { window: 15 * 60, max: 10 },
+    },
+  },
   session: {
     expiresIn: 60 * 60 * 24 * 30,
     updateAge: 60 * 60 * 24,
@@ -64,7 +77,7 @@ export const auth = betterAuth({
       allowedAttempts: 3,
       storeOTP: "hashed",
       async sendVerificationOTP({ email, otp }) {
-        deliverFakeOtp(email.toLowerCase(), otp);
+        await deliverEmailOtp(email, otp);
       },
     }),
     phoneNumber({
