@@ -25,6 +25,7 @@ test("GET /api/health/db/ reports a live PostgreSQL connection", { skip: !databa
       BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "integration-test-secret-with-at-least-32-characters",
       BETTER_AUTH_URL: `http://127.0.0.1:${port}`,
       AUTH_FAKE_OTP_ENABLED: "true",
+      AUTH_FAKE_OTP_PREVIEW_ENABLED: "true",
       HOSTNAME: "127.0.0.1",
       NODE_ENV: "production",
       PORT: String(port),

@@ -1,30 +1,16 @@
-import { createHash } from "node:crypto";
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { emailOTP, phoneNumber } from "better-auth/plugins";
+import { emailOTP } from "better-auth/plugins";
 import { getDb } from "../db";
 import * as schema from "../db/schema";
 import { getServerEnv } from "./env";
-import { rememberFakeOtp } from "./fake-otp";
-import { normalizeIranianPhone } from "./phone";
 import { ensureUserFoundation, writeAuditRecord } from "./auth-foundation";
 import { deliverEmailOtp } from "./email";
+import { consumeIdentityRateLimit, IdentityRateLimitError } from "./identity-rate-limit";
 
 const env = getServerEnv();
 const otpExpiresIn = 5 * 60;
-
-function phonePlaceholderEmail(phone: string) {
-  const digest = createHash("sha256").update(phone).digest("hex").slice(0, 24);
-  return `${digest}@phone.academy.invalid`;
-}
-
-function deliverFakeOtp(identifier: string, code: string) {
-  if (!env.AUTH_FAKE_OTP_ENABLED) {
-    throw new Error("OTP delivery provider is not configured");
-  }
-  rememberFakeOtp(identifier, code, otpExpiresIn);
-  console.info(`[fake-otp] Code generated for ${identifier}`);
-}
 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
@@ -33,17 +19,81 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
-  emailAndPassword: { enabled: false },
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: true,
+    minPasswordLength: 10,
+    maxPasswordLength: 128,
+    revokeSessionsOnPasswordReset: true,
+    async onPasswordReset({ user: resetUser }) {
+      await writeAuditRecord({
+        actorUserId: resetUser.id,
+        action: "auth.password.reset",
+        entityType: "user",
+        entityId: resetUser.id,
+      });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    expiresIn: otpExpiresIn,
+    async afterEmailVerification(verifiedUser) {
+      await writeAuditRecord({
+        actorUserId: verifiedUser.id,
+        action: "auth.email.verified",
+        entityType: "user",
+        entityId: verifiedUser.id,
+      });
+    },
+  },
+  disabledPaths: ["/sign-in/email-otp", "/email-otp/send-verification-otp"],
+  hooks: {
+    before: createAuthMiddleware(async (context) => {
+      const email = typeof context.body?.email === "string" ? context.body.email.trim().toLowerCase() : "";
+      if (!email) return;
+
+      const policies = context.path === "/sign-up/email"
+        ? [
+            { namespace: "signup-cooldown", window: 60, max: 1 },
+            { namespace: "signup-window", window: 15 * 60, max: 5 },
+          ]
+        : context.path === "/email-otp/request-password-reset"
+          ? [
+              { namespace: "password-reset-cooldown", window: 60, max: 1 },
+              { namespace: "password-reset-window", window: 60 * 60, max: 3 },
+            ]
+          : context.path === "/sign-in/email"
+            ? [{ namespace: "password-login-window", window: 15 * 60, max: 10 }]
+            : [];
+
+      try {
+        for (const policy of policies) {
+          await consumeIdentityRateLimit({ ...policy, identifier: email });
+        }
+      } catch (error) {
+        if (error instanceof IdentityRateLimitError) {
+          throw APIError.from("TOO_MANY_REQUESTS", {
+            code: "IDENTITY_RATE_LIMITED",
+            message: "Too many requests. Please try again later.",
+          });
+        }
+        throw error;
+      }
+    }),
+  },
   rateLimit: {
     enabled: true,
     storage: "database",
     window: 60,
     max: 100,
     customRules: {
+      "/sign-up/email": { window: 15 * 60, max: 5 },
+      "/sign-in/email": { window: 15 * 60, max: 10 },
       "/email-otp/send-verification-otp": { window: 15 * 60, max: 5 },
-      "/phone-number/send-otp": { window: 15 * 60, max: 5 },
-      "/sign-in/email-otp": { window: 15 * 60, max: 10 },
-      "/phone-number/verify": { window: 15 * 60, max: 10 },
+      "/email-otp/verify-email": { window: 15 * 60, max: 5 },
+      "/email-otp/request-password-reset": { window: 60 * 60, max: 3 },
+      "/email-otp/reset-password": { window: 15 * 60, max: 5 },
     },
   },
   advanced: {
@@ -58,6 +108,12 @@ export const auth = betterAuth({
       create: {
         after: async (createdUser) => {
           await ensureUserFoundation(createdUser);
+          await writeAuditRecord({
+            actorUserId: createdUser.id,
+            action: "auth.user.created",
+            entityType: "user",
+            entityId: createdUser.id,
+          });
         },
       },
     },
@@ -77,25 +133,12 @@ export const auth = betterAuth({
   plugins: [
     emailOTP({
       expiresIn: otpExpiresIn,
-      allowedAttempts: 3,
-      storeOTP: "hashed",
-      async sendVerificationOTP({ email, otp }) {
-        await deliverEmailOtp(email, otp);
-      },
-    }),
-    phoneNumber({
-      expiresIn: otpExpiresIn,
-      allowedAttempts: 3,
-      phoneNumberValidator: (phone) => normalizeIranianPhone(phone) === phone,
-      signUpOnVerification: {
-        getTempEmail: phonePlaceholderEmail,
-        getTempName: () => "هنرجوی آکادمی",
-      },
-      callbackOnVerification: async ({ user: verifiedUser }) => {
-        await ensureUserFoundation(verifiedUser);
-      },
-      async sendOTP({ phoneNumber: phone, code }) {
-        deliverFakeOtp(phone, code);
+      allowedAttempts: 5,
+      storeOTP: env.AUTH_FAKE_OTP_ENABLED ? "plain" : "hashed",
+      disableSignUp: true,
+      overrideDefaultEmailVerification: true,
+      async sendVerificationOTP({ email, otp, type }) {
+        await deliverEmailOtp(email, otp, type);
       },
     }),
   ],

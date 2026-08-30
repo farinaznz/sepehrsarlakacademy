@@ -30,9 +30,31 @@ async function waitForServer(child, origin) {
   throw new Error("Standalone server did not become ready");
 }
 
-test("email and phone OTP create sessions with protected learning access", { skip: !databaseUrl }, async (t) => {
+async function waitForFakeOtp(origin, email, headers, previousCode) {
+  const deadline = Date.now() + 2_000;
+  let lastResponse = "no response";
+  while (Date.now() < deadline) {
+    const preview = await fetch(`${origin}/api/auth/fake-otp/`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ identifier: email }),
+    });
+    if (preview.ok) {
+      const { code } = await preview.json();
+      if (code && code !== previousCode) return code;
+      lastResponse = `200 ${code ?? "missing code"}`;
+    } else {
+      lastResponse = `${preview.status} ${await preview.text()}`;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error(`Fake OTP was not delivered for ${email}: ${lastResponse}`);
+}
+
+test("verified email signup, password login, and password recovery protect learning access", { skip: !databaseUrl }, async (t) => {
   const port = await availablePort();
   const origin = `http://127.0.0.1:${port}`;
+  const jsonHeaders = { "Content-Type": "application/json", Origin: origin };
   const child = spawn(process.execPath, [".next/standalone/server.js"], {
     env: {
       ...process.env,
@@ -40,53 +62,68 @@ test("email and phone OTP create sessions with protected learning access", { ski
       BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "integration-test-secret-with-at-least-32-characters",
       BETTER_AUTH_URL: origin,
       AUTH_FAKE_OTP_ENABLED: "true",
+      AUTH_FAKE_OTP_PREVIEW_ENABLED: "true",
       HOSTNAME: "127.0.0.1",
       NODE_ENV: "test",
       PORT: String(port),
     },
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio: ["ignore", "inherit", "inherit"],
   });
   t.after(() => child.kill("SIGTERM"));
   await waitForServer(child, origin);
+  const sql = postgres(databaseUrl, { max: 1 });
+  t.after(() => sql.end());
 
   const email = `integration-${Date.now()}@example.com`;
-  const send = await fetch(`${origin}/api/auth/email-otp/send-verification-otp/`, {
+  const initialPassword = "initial-password-123";
+  const signup = await fetch(`${origin}/api/auth/sign-up/email/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, type: "sign-in" }),
+    headers: jsonHeaders,
+    body: JSON.stringify({ email, password: initialPassword, name: "Integration Student" }),
   });
-  assert.equal(send.status, 200, await send.text());
+  assert.equal(signup.status, 200, await signup.text());
+  assert.equal(signup.headers.get("set-cookie"), null, "unverified signup must not create a session");
 
-  const preview = await fetch(`${origin}/api/auth/fake-otp/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ identifier: email }),
-  });
-  assert.equal(preview.status, 200);
-  const { code } = await preview.json();
+  const code = await waitForFakeOtp(origin, email, jsonHeaders);
   assert.match(code, /^\d{6}$/);
 
-  const signIn = await fetch(`${origin}/api/auth/sign-in/email-otp/`, {
+  await sql`update rate_limit set last_request = 0 where key like 'identity:signup-cooldown:%'`;
+  const resendSignup = await fetch(`${origin}/api/auth/resend-signup-otp/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, otp: code, name: "Integration Student" }),
+    headers: jsonHeaders,
+    body: JSON.stringify({ email }),
+  });
+  assert.equal(resendSignup.status, 200, await resendSignup.text());
+  const resentCode = await waitForFakeOtp(origin, email, jsonHeaders, code);
+  assert.match(resentCode, /^\d{6}$/);
+
+  const verify = await fetch(`${origin}/api/auth/email-otp/verify-email/`, {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify({ email, otp: resentCode }),
+  });
+  assert.equal(verify.status, 200, await verify.clone().text());
+  const verified = await verify.json();
+  assert.ok(verified.user.id);
+  assert.equal(verified.user.emailVerified, true);
+
+  const signIn = await fetch(`${origin}/api/auth/sign-in/email/`, {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify({ email, password: initialPassword }),
   });
   assert.equal(signIn.status, 200, await signIn.text());
-  const signedIn = await signIn.json();
-  assert.ok(signedIn.user.id);
   const cookie = signIn.headers.get("set-cookie")?.split(";")[0];
-  assert.ok(cookie, "session cookie was not set");
+  assert.ok(cookie, "password login session cookie was not set");
 
   const dashboard = await fetch(`${origin}/dashboard/`, { headers: { cookie } });
   assert.equal(dashboard.status, 200);
 
-  const sql = postgres(databaseUrl, { max: 1 });
-  t.after(() => sql.end());
   const [seededCourse] = await sql`select id, slug from course order by created_at limit 1`;
   const [seededLesson] = await sql`select id, slug from lesson where course_id = ${seededCourse.id} order by position limit 1`;
   await sql`
     insert into enrollment (id, user_id, course_id, status)
-    values (${crypto.randomUUID()}, ${signedIn.user.id}, ${seededCourse.id}, 'active')
+    values (${crypto.randomUUID()}, ${verified.user.id}, ${seededCourse.id}, 'active')
     on conflict (user_id, course_id) do update set status = 'active'
   `;
 
@@ -96,34 +133,43 @@ test("email and phone OTP create sessions with protected learning access", { ski
   assert.equal(protectedLesson.status, 200);
   assert.match(await protectedLesson.text(), /Integration Student|شروع مسیر یادگیری|فضای هنرجویی/);
 
-  const phoneNumber = `+98912${String(Date.now()).slice(-7)}`;
-  const sendPhone = await fetch(`${origin}/api/auth/phone-number/send-otp/`, {
+  const disabledOtpSignIn = await fetch(`${origin}/api/auth/sign-in/email-otp/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phoneNumber }),
+    headers: jsonHeaders,
+    body: JSON.stringify({ email, otp: resentCode }),
   });
-  assert.equal(sendPhone.status, 200, await sendPhone.text());
+  assert.equal(disabledOtpSignIn.status, 404);
 
-  const phonePreview = await fetch(`${origin}/api/auth/fake-otp/`, {
+  const requestReset = await fetch(`${origin}/api/auth/email-otp/request-password-reset/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ identifier: phoneNumber }),
+    headers: jsonHeaders,
+    body: JSON.stringify({ email }),
   });
-  assert.equal(phonePreview.status, 200);
-  const { code: phoneCode } = await phonePreview.json();
-  assert.match(phoneCode, /^\d{6}$/);
+  assert.equal(requestReset.status, 200, await requestReset.text());
 
-  const verifyPhone = await fetch(`${origin}/api/auth/phone-number/verify/`, {
+  const resetCode = await waitForFakeOtp(origin, email, jsonHeaders, resentCode);
+  assert.match(resetCode, /^\d{6}$/);
+
+  const newPassword = "replacement-password-456";
+  const reset = await fetch(`${origin}/api/auth/email-otp/reset-password/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phoneNumber, code: phoneCode }),
+    headers: jsonHeaders,
+    body: JSON.stringify({ email, otp: resetCode, password: newPassword }),
   });
-  assert.equal(verifyPhone.status, 200, await verifyPhone.text());
-  const phoneCookie = verifyPhone.headers.get("set-cookie")?.split(";")[0];
-  assert.ok(phoneCookie, "phone session cookie was not set");
+  assert.equal(reset.status, 200, await reset.text());
 
-  const phoneDashboard = await fetch(`${origin}/dashboard/`, {
-    headers: { cookie: phoneCookie },
+  const oldPasswordLogin = await fetch(`${origin}/api/auth/sign-in/email/`, {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify({ email, password: initialPassword }),
   });
-  assert.equal(phoneDashboard.status, 200);
+  assert.notEqual(oldPasswordLogin.status, 200);
+
+  const newPasswordLogin = await fetch(`${origin}/api/auth/sign-in/email/`, {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify({ email, password: newPassword }),
+  });
+  assert.equal(newPasswordLogin.status, 200, await newPasswordLogin.text());
+  assert.ok(newPasswordLogin.headers.get("set-cookie"), "new password did not create a session");
 });

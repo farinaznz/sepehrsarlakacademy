@@ -15,6 +15,10 @@ const serverEnvSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),
+  AUTH_FAKE_OTP_PREVIEW_ENABLED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
   SMTP_HOST: z.string().default(""),
   SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
   SMTP_SECURE: z
@@ -28,6 +32,13 @@ const serverEnvSchema = z.object({
   AUTH_ADMIN_PHONES: z.string().default(""),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 }).superRefine((env, context) => {
+  if (env.AUTH_FAKE_OTP_PREVIEW_ENABLED && !env.AUTH_FAKE_OTP_ENABLED) {
+    context.addIssue({
+      code: "custom",
+      path: ["AUTH_FAKE_OTP_PREVIEW_ENABLED"],
+      message: "requires AUTH_FAKE_OTP_ENABLED=true",
+    });
+  }
   if (env.AUTH_FAKE_OTP_ENABLED) return;
   for (const key of ["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM"] as const) {
     if (!env[key]) {

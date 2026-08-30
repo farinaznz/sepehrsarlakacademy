@@ -7,7 +7,7 @@ import { getServerEnv } from "../../lib/env";
 
 export const metadata: Metadata = {
   title: "ورود هنرجویان",
-  description: "ورود امن هنرجویان با کد یک‌بار مصرف ایمیل یا تلفن همراه.",
+  description: "ورود و ثبت‌نام امن هنرجویان با ایمیل.",
 };
 
 export const dynamic = "force-dynamic";
@@ -25,22 +25,22 @@ export default async function LoginPage({
     ? requestedReturnTo
     : "/dashboard";
   const env = getServerEnv();
-  const fakePreviewEnabled = env.AUTH_FAKE_OTP_ENABLED && env.NODE_ENV !== "production";
+  const fakePreviewEnabled = env.AUTH_FAKE_OTP_ENABLED && env.AUTH_FAKE_OTP_PREVIEW_ENABLED;
 
   return (
     <section className="login-page">
       <div className="login-intro">
         <span className="eyebrow eyebrow-light">فضای هنرجویی</span>
         <h1>یادگیری شما،<br />از همین‌جا ادامه پیدا می‌کند.</h1>
-        <p>با شماره همراه یا ایمیل وارد شوید. برای هر ورود یک کد یک‌بار مصرف دریافت می‌کنید.</p>
+        <p>با ایمیل و گذرواژه وارد شوید. هنگام ثبت‌نام، ایمیل شما با یک کد یک‌بار مصرف تأیید می‌شود.</p>
         <div className="login-benefits">
           <div><span>۰۱</span><p>دسترسی یکجا به دوره‌های شما</p></div>
           <div><span>۰۲</span><p>ادامه یادگیری از آخرین مرحله</p></div>
-          <div><span>۰۳</span><p>ورود بدون نیاز به گذرواژه</p></div>
+          <div><span>۰۳</span><p>بازیابی امن گذرواژه با ایمیل</p></div>
         </div>
       </div>
       <div className="login-panel">
-        <LoginForm returnTo={returnTo} phoneEnabled={env.AUTH_FAKE_OTP_ENABLED} fakePreviewEnabled={fakePreviewEnabled} />
+        <LoginForm returnTo={returnTo} fakePreviewEnabled={fakePreviewEnabled} />
       </div>
     </section>
   );

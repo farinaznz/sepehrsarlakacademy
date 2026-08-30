@@ -13,6 +13,7 @@ const env = {
   BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "integration-test-secret-with-at-least-32-characters",
   BETTER_AUTH_URL: "http://127.0.0.1:3456",
   AUTH_FAKE_OTP_ENABLED: "true",
+  AUTH_FAKE_OTP_PREVIEW_ENABLED: "true",
 };
 
 for (const args of [
