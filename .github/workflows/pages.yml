@@ -15,6 +15,11 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://build:build@127.0.0.1:5432/build
+      BETTER_AUTH_SECRET: build-only-secret-with-at-least-32-characters
+      BETTER_AUTH_URL: http://localhost:3000
+      AUTH_FAKE_OTP_ENABLED: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@v6

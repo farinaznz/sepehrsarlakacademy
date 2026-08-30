@@ -1,37 +1,43 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "../../lib/auth";
+import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
-  title: "فضای هنرجویی",
-  description: "اطلاع‌رسانی وضعیت فضای هنرجویی آکادمی آشپزی سپهر سرلک.",
+  title: "ورود هنرجویان",
+  description: "ورود امن هنرجویان با کد یک‌بار مصرف ایمیل یا تلفن همراه.",
 };
 
-export default function LoginPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string }>;
+}) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (session) redirect("/dashboard");
+
+  const requestedReturnTo = (await searchParams).returnTo;
+  const returnTo = requestedReturnTo?.startsWith("/") && !requestedReturnTo.startsWith("//")
+    ? requestedReturnTo
+    : "/dashboard";
+
   return (
     <section className="login-page">
       <div className="login-intro">
         <span className="eyebrow eyebrow-light">فضای هنرجویی</span>
         <h1>یادگیری شما،<br />از همین‌جا ادامه پیدا می‌کند.</h1>
-        <p>به دوره‌ها، محتوای آموزشی و مسیر یادگیری خود در آکادمی دسترسی داشته باشید.</p>
+        <p>با شماره همراه یا ایمیل وارد شوید. برای هر ورود یک کد یک‌بار مصرف دریافت می‌کنید.</p>
         <div className="login-benefits">
           <div><span>۰۱</span><p>دسترسی یکجا به دوره‌های شما</p></div>
           <div><span>۰۲</span><p>ادامه یادگیری از آخرین مرحله</p></div>
-          <div><span>۰۳</span><p>ارتباط ساده‌تر با تیم آموزش</p></div>
+          <div><span>۰۳</span><p>ورود بدون نیاز به گذرواژه</p></div>
         </div>
       </div>
-
       <div className="login-panel">
-        <div className="login-card">
-          <span className="login-card-index">حساب هنرجویی</span>
-          <div className="login-account-mark" aria-hidden="true">◇</div>
-          <h2>ورود موقتاً<br />غیرفعال است</h2>
-          <p>در حال آماده‌سازی نسخه تازه فضای هنرجویی هستیم. تا فعال‌شدن دوباره ورود، می‌توانید دوره‌ها را ببینید یا با پشتیبانی در تماس باشید.</p>
-          <div className="login-actions">
-            <Link className="button button-wide" href="/courses">مشاهده دوره‌ها</Link>
-            <Link className="button button-ghost button-wide" href="/contact">تماس با پشتیبانی</Link>
-          </div>
-          <div className="login-trust"><span aria-hidden="true">◇</span><p><strong>اطلاعات حساب شما محفوظ است</strong><small>برای فعال‌شدن دوباره ورود، از همین صفحه اطلاع‌رسانی می‌کنیم.</small></p></div>
-        </div>
+        <LoginForm returnTo={returnTo} />
       </div>
     </section>
   );

@@ -16,7 +16,7 @@ const ekraan = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://farinaznz.github.io"),
+  metadataBase: new URL("https://new.sepehrsarlakacademy.com"),
   title: {
     default: "آکادمی آشپزی سپهر سرلک",
     template: "%s | آکادمی سپهر سرلک",
