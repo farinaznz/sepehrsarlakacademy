@@ -115,6 +115,7 @@ export const lesson = pgTable("lesson", {
   content: text("content").notNull(),
   position: integer("position").notNull().default(1),
   published: boolean("published").notNull().default(false),
+  dripDelayDays: integer("drip_delay_days").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
@@ -146,6 +147,33 @@ export const lessonProgress = pgTable("lesson_progress", {
 }, (table) => [
   uniqueIndex("lessonProgress_userId_lessonId_uidx").on(table.userId, table.lessonId),
   index("lessonProgress_userId_idx").on(table.userId),
+]);
+
+export const lessonNote = pgTable("lesson_note", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  lessonId: text("lesson_id").notNull().references(() => lesson.id, { onDelete: "cascade" }),
+  body: text("body").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("lessonNote_userId_lessonId_uidx").on(table.userId, table.lessonId),
+  index("lessonNote_userId_idx").on(table.userId),
+]);
+
+export const lessonComment = pgTable("lesson_comment", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  lessonId: text("lesson_id").notNull().references(() => lesson.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  status: text("status").notNull().default("pending"),
+  moderatedByUserId: text("moderated_by_user_id").references(() => user.id, { onDelete: "set null" }),
+  moderatedAt: timestamp("moderated_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("lessonComment_lessonId_status_idx").on(table.lessonId, table.status),
+  index("lessonComment_userId_idx").on(table.userId),
 ]);
 
 export const auditRecord = pgTable("audit_record", {

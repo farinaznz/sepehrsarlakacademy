@@ -22,6 +22,7 @@ export async function ensureUserFoundation(user: AuthUser) {
     await tx.insert(profile).values({ userId: user.id, displayName: user.name || "هنرجوی آکادمی" }).onConflictDoNothing();
     await tx.insert(role).values([
       { id: "student", label: "هنرجو" },
+      { id: "instructor", label: "مدرس" },
       { id: "admin", label: "مدیر" },
     ]).onConflictDoNothing();
     await tx.insert(userRole).values({ userId: user.id, roleId: "student" }).onConflictDoNothing();
@@ -33,6 +34,13 @@ export async function userHasRole(userId: string, roleId: string) {
   const [match] = await getDb().select({ userId: userRole.userId }).from(userRole)
     .where(and(eq(userRole.userId, userId), eq(userRole.roleId, roleId))).limit(1);
   return Boolean(match);
+}
+
+export async function userHasAnyRole(userId: string, roleIds: string[]) {
+  for (const roleId of roleIds) {
+    if (await userHasRole(userId, roleId)) return true;
+  }
+  return false;
 }
 
 export async function writeAuditRecord(input: {

@@ -119,19 +119,46 @@ test("verified email signup, password login, and password recovery protect learn
   const dashboard = await fetch(`${origin}/dashboard/`, { headers: { cookie } });
   assert.equal(dashboard.status, 200);
 
+  const learningAdmin = await fetch(`${origin}/admin/learning/`, { headers: { cookie }, redirect: "manual" });
+  assert.equal(learningAdmin.status, 307, "students must not enter instructor/admin operations");
+  assert.equal(new URL(learningAdmin.headers.get("location"), origin).pathname, "/dashboard");
+
   const [seededCourse] = await sql`select id, slug from course order by created_at limit 1`;
   const [seededLesson] = await sql`select id, slug from lesson where course_id = ${seededCourse.id} order by position limit 1`;
+
+  const lessonWithoutEnrollment = await fetch(`${origin}/learn/${seededCourse.slug}/${seededLesson.slug}/`, {
+    headers: { cookie },
+  });
+  assert.equal(lessonWithoutEnrollment.status, 404, "a signed-in student without enrollment must not read lesson content");
+
   await sql`
     insert into enrollment (id, user_id, course_id, status)
     values (${crypto.randomUUID()}, ${verified.user.id}, ${seededCourse.id}, 'active')
     on conflict (user_id, course_id) do update set status = 'active'
   `;
 
+  await sql`update lesson set drip_delay_days = 2 where id = ${seededLesson.id}`;
+  const lessonBeforeRelease = await fetch(`${origin}/learn/${seededCourse.slug}/${seededLesson.slug}/`, {
+    headers: { cookie },
+  });
+  assert.equal(lessonBeforeRelease.status, 404, "an enrolled student must not read content before its drip date");
+  const dashboardWithLockedLesson = await fetch(`${origin}/dashboard/`, { headers: { cookie } });
+  assert.match(await dashboardWithLockedLesson.text(), /فعال‌سازی/);
+
+  await sql`update lesson set drip_delay_days = 0 where id = ${seededLesson.id}`;
+
   const protectedLesson = await fetch(`${origin}/learn/${seededCourse.slug}/${seededLesson.slug}/`, {
     headers: { cookie },
   });
   assert.equal(protectedLesson.status, 200);
   assert.match(await protectedLesson.text(), /Integration Student|شروع مسیر یادگیری|فضای هنرجویی/);
+
+  await sql`update enrollment set status = 'revoked' where user_id = ${verified.user.id} and course_id = ${seededCourse.id}`;
+  const lessonAfterRevocation = await fetch(`${origin}/learn/${seededCourse.slug}/${seededLesson.slug}/`, {
+    headers: { cookie },
+  });
+  assert.equal(lessonAfterRevocation.status, 404, "revoking enrollment must immediately remove lesson access");
+  await sql`update enrollment set status = 'active' where user_id = ${verified.user.id} and course_id = ${seededCourse.id}`;
 
   const disabledOtpSignIn = await fetch(`${origin}/api/auth/sign-in/email-otp/`, {
     method: "POST",

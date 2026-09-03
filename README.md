@@ -29,6 +29,13 @@ currently disabled, while the optional phone fields remain available for a futur
 provider. An admin can grant or revoke course
 access at `/admin/enrollments`; students see active courses at `/dashboard`.
 
+The learning workspace includes per-course progress, ordered previous/next lesson
+navigation, private student notes, enrollment-relative content drip, and moderated
+lesson comments. Instructors and admins manage lesson content, publishing, drip
+delays, and the moderation queue at `/admin/learning`; only admins can grant the
+instructor role or change enrollments. Learner actions always re-check the active
+enrollment, published state, and release date on the server.
+
 ## Development
 
 ```bash

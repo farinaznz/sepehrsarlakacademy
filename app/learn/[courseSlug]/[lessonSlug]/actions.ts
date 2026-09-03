@@ -1,41 +1,71 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getDb } from "../../../../db";
-import { course, enrollment, lesson, lessonProgress } from "../../../../db/schema";
+import { lessonComment, lessonNote, lessonProgress } from "../../../../db/schema";
 import { writeAuditRecord } from "../../../../lib/auth-foundation";
+import { getAccessibleLesson } from "../../../../lib/learning-access";
 import { requireSession } from "../../../../lib/session";
 
-export async function completeLesson(formData: FormData) {
+async function actionContext(formData: FormData) {
   const current = await requireSession();
   const lessonId = formData.get("lessonId");
-  if (typeof lessonId !== "string") return;
+  if (typeof lessonId !== "string") return null;
+  const allowed = await getAccessibleLesson({ userId: current.user.id, lessonId });
+  return allowed ? { current, allowed } : null;
+}
 
-  const [allowed] = await getDb().select({ lessonId: lesson.id, courseSlug: course.slug, lessonSlug: lesson.slug })
-    .from(lesson)
-    .innerJoin(course, eq(lesson.courseId, course.id))
-    .innerJoin(enrollment, and(
-      eq(enrollment.courseId, course.id),
-      eq(enrollment.userId, current.user.id),
-      eq(enrollment.status, "active"),
-    ))
-    .where(and(eq(lesson.id, lessonId), eq(lesson.published, true))).limit(1);
-  if (!allowed) return;
+function refreshLesson(courseSlug: string, lessonSlug: string) {
+  revalidatePath(`/learn/${courseSlug}/${lessonSlug}`);
+  revalidatePath("/dashboard");
+}
 
+export async function setLessonCompletion(formData: FormData) {
+  const context = await actionContext(formData);
+  if (!context) return;
+  const completed = formData.get("completed") === "true";
   const now = new Date();
   await getDb().insert(lessonProgress).values({
-    id: crypto.randomUUID(), userId: current.user.id, lessonId, percent: 100, completedAt: now, lastViewedAt: now,
+    id: crypto.randomUUID(), userId: context.current.user.id, lessonId: context.allowed.id,
+    percent: completed ? 100 : 0, completedAt: completed ? now : null, lastViewedAt: now,
   }).onConflictDoUpdate({
     target: [lessonProgress.userId, lessonProgress.lessonId],
-    set: { percent: 100, completedAt: now, lastViewedAt: now, updatedAt: now },
+    set: { percent: completed ? 100 : 0, completedAt: completed ? now : null, lastViewedAt: now, updatedAt: now },
   });
   await writeAuditRecord({
-    actorUserId: current.user.id,
-    action: "lesson.completed",
-    entityType: "lesson",
-    entityId: lessonId,
+    actorUserId: context.current.user.id,
+    action: completed ? "lesson.completed" : "lesson.reopened",
+    entityType: "lesson", entityId: context.allowed.id,
   });
-  revalidatePath(`/learn/${allowed.courseSlug}/${allowed.lessonSlug}`);
-  revalidatePath("/dashboard");
+  refreshLesson(context.allowed.courseSlug, context.allowed.lessonSlug);
+}
+
+export async function saveLessonNote(formData: FormData) {
+  const context = await actionContext(formData);
+  const body = formData.get("body");
+  if (!context || typeof body !== "string" || body.length > 5000) return;
+  const now = new Date();
+  await getDb().insert(lessonNote).values({
+    id: crypto.randomUUID(), userId: context.current.user.id, lessonId: context.allowed.id, body: body.trim(),
+  }).onConflictDoUpdate({
+    target: [lessonNote.userId, lessonNote.lessonId], set: { body: body.trim(), updatedAt: now },
+  });
+  refreshLesson(context.allowed.courseSlug, context.allowed.lessonSlug);
+}
+
+export async function submitLessonComment(formData: FormData) {
+  const context = await actionContext(formData);
+  const body = formData.get("body");
+  if (!context || typeof body !== "string") return;
+  const cleanBody = body.trim();
+  if (!cleanBody || cleanBody.length > 2000) return;
+  const [created] = await getDb().insert(lessonComment).values({
+    id: crypto.randomUUID(), userId: context.current.user.id, lessonId: context.allowed.id,
+    body: cleanBody, status: "pending",
+  }).returning({ id: lessonComment.id });
+  await writeAuditRecord({
+    actorUserId: context.current.user.id, action: "comment.submitted",
+    entityType: "lesson_comment", entityId: created.id, metadata: { lessonId: context.allowed.id },
+  });
+  refreshLesson(context.allowed.courseSlug, context.allowed.lessonSlug);
 }

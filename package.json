@@ -11,7 +11,7 @@
     "build:standalone": "next build && node scripts/prepare-standalone.mjs",
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
-    "test": "node --test tests/course-content.test.mjs tests/course-gallery.test.mjs tests/home-hero.test.mjs tests/journal-content.test.mjs",
+    "test": "node --test tests/course-content.test.mjs tests/course-gallery.test.mjs tests/home-hero.test.mjs tests/journal-content.test.mjs tests/learning-rules.test.mjs",
     "test:integration": "node scripts/run-integration-tests.mjs",
     "test:journal": "node --test tests/journal-content.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
