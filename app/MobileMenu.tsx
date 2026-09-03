@@ -3,16 +3,19 @@
 import Link from "next/link";
 import { useRef } from "react";
 
-const links = [
+const publicLinks = [
   { href: "/courses", label: "دوره‌ها" },
   { href: "/journal", label: "مجله" },
   { href: "/about", label: "درباره آکادمی" },
-  { href: "/login", label: "ورود هنرجویان" },
-  { href: "/courses", label: "انتخاب دوره" },
 ];
 
-export function MobileMenu() {
+export function MobileMenu({ userName, sessionPending = false }: { userName?: string; sessionPending?: boolean }) {
   const menuRef = useRef<HTMLDetailsElement>(null);
+  const links = sessionPending
+    ? publicLinks
+    : userName
+    ? [...publicLinks, { href: "/dashboard", label: userName }]
+    : [...publicLinks, { href: "/login", label: "ورود هنرجویان" }, { href: "/courses", label: "انتخاب دوره" }];
 
   const closeMenu = () => {
     menuRef.current?.removeAttribute("open");

@@ -36,6 +36,11 @@ delays, and the moderation queue at `/admin/learning`; only admins can grant the
 instructor role or change enrollments. Learner actions always re-check the active
 enrollment, published state, and release date on the server.
 
+Courses explicitly marked `self_service` allow a signed-in student to enroll
+themselves immediately; paid and manual courses remain restricted. The cooking
+foundations seed contains the restored 9-section, 92-lesson curriculum. Its
+lesson images currently load from the original academy media library.
+
 ## Development
 
 ```bash
@@ -53,9 +58,9 @@ npm run lint
 npm run build:standalone
 ```
 
-The seed command imports the public course catalog and creates one protected
-welcome lesson per course. Authentication, profile, role, enrollment, progress,
-and audit data remains in PostgreSQL.
+The seed command imports the public course catalog, creates a protected welcome
+lesson per course, and restores all cooking-foundations lessons. Authentication,
+profile, role, enrollment, progress, and audit data remains in PostgreSQL.
 
 The database health endpoint is `GET /api/health/db/`. It returns HTTP 200 only
 after PostgreSQL answers a query, and HTTP 503 otherwise.

@@ -70,6 +70,6 @@ export default async function DashboardPage() {
           <div className="locked-lesson" key={entry.id}><span>{entry.title}</span><small>فعال‌سازی {entry.releaseAt.toLocaleDateString("fa-IR")}</small></div>
         )}</div>
       </article>;
-    })}</div> : <div className="student-empty"><span aria-hidden="true">◇</span><h2>هنوز دوره‌ای برای شما فعال نشده است.</h2><p>پس از ثبت‌نام دستی توسط تیم آکادمی، دوره و درس‌های آن اینجا نمایش داده می‌شود.</p><Link className="button" href="/contact">ارتباط با آکادمی</Link></div>}
+    })}</div> : <div className="student-empty"><span aria-hidden="true">◇</span><h2>هنوز دوره‌ای برای شما فعال نشده است.</h2><p>می‌توانید دوره‌های رایگان را همان لحظه شروع کنید؛ برای دوره‌های دیگر نیز تیم آکادمی همراه شماست.</p><Link className="button" href="/courses">مشاهده دوره‌ها</Link></div>}
   </div></section>;
 }

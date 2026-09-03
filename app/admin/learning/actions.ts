@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "../../../db";
 import { lesson, lessonComment, role, user, userRole } from "../../../db/schema";
 import { writeAuditRecord } from "../../../lib/auth-foundation";
+import { sanitizeLessonContent } from "../../../lib/lesson-content";
 import { requireAdmin, requireLearningStaff } from "../../../lib/session";
 
 export async function saveLesson(formData: FormData) {
@@ -14,11 +15,12 @@ export async function saveLesson(formData: FormData) {
   const title = formData.get("title");
   const slug = formData.get("slug");
   const summary = formData.get("summary");
+  const sectionTitle = formData.get("sectionTitle");
   const content = formData.get("content");
   const parsedPosition = Number(formData.get("position"));
   const parsedDelay = Number(formData.get("dripDelayDays"));
   if (typeof courseId !== "string" || typeof title !== "string" || typeof slug !== "string" ||
-      typeof summary !== "string" || typeof content !== "string" || !title.trim() || !content.trim() ||
+      typeof summary !== "string" || typeof sectionTitle !== "string" || typeof content !== "string" || !title.trim() || !content.trim() ||
       !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !Number.isInteger(parsedPosition) || parsedPosition < 1 ||
       !Number.isInteger(parsedDelay) || parsedDelay < 0 || parsedDelay > 3650) return;
   const db = getDb();
@@ -26,7 +28,7 @@ export async function saveLesson(formData: FormData) {
     .where(and(eq(lesson.courseId, courseId), eq(lesson.slug, slug))).limit(1);
   if (duplicate && duplicate.id !== lessonId) return;
   const values = {
-    courseId, title: title.trim(), slug, summary: summary.trim(), content: content.trim(), position: parsedPosition,
+    courseId, title: title.trim(), slug, summary: summary.trim(), sectionTitle: sectionTitle.trim(), content: sanitizeLessonContent(content), position: parsedPosition,
     published: formData.get("published") === "on", dripDelayDays: parsedDelay, updatedAt: new Date(),
   };
   const [saved] = typeof lessonId === "string" && lessonId

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { SiteFooter, SiteHeader } from "./components";
+import { SiteFooter } from "./components";
+import { SiteHeader } from "./SiteHeader";
 import { withBasePath } from "./site-path";
 
 const ekraan = localFont({

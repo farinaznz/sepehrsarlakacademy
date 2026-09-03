@@ -102,6 +102,7 @@ export const course = pgTable("course", {
   title: text("title").notNull(),
   description: text("description").notNull().default(""),
   status: text("status").notNull().default("published"),
+  enrollmentMode: text("enrollment_mode").notNull().default("manual"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -114,6 +115,7 @@ export const lesson = pgTable("lesson", {
   summary: text("summary").notNull().default(""),
   content: text("content").notNull(),
   position: integer("position").notNull().default(1),
+  sectionTitle: text("section_title").notNull().default(""),
   published: boolean("published").notNull().default(false),
   dripDelayDays: integer("drip_delay_days").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

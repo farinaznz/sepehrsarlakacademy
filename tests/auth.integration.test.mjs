@@ -74,6 +74,22 @@ test("verified email signup, password login, and password recovery protect learn
   const sql = postgres(databaseUrl, { max: 1 });
   t.after(() => sql.end());
 
+  const [foundationsCourse] = await sql`
+    select id, enrollment_mode from course where slug = 'cooking-foundations-online'
+  `;
+  assert.equal(foundationsCourse.enrollment_mode, "self_service");
+  const [foundationsCurriculum] = await sql`
+    select count(*)::int as lesson_count,
+      count(distinct nullif(section_title, ''))::int as section_count
+    from lesson where course_id = ${foundationsCourse.id} and published = true
+  `;
+  assert.deepEqual(foundationsCurriculum, { lesson_count: 92, section_count: 9 });
+  const [manualCourseCount] = await sql`
+    select count(*)::int as count from course
+    where slug <> 'cooking-foundations-online' and enrollment_mode <> 'manual'
+  `;
+  assert.equal(manualCourseCount.count, 0, "paid courses must remain manual enrollment only");
+
   const email = `integration-${Date.now()}@example.com`;
   const initialPassword = "initial-password-123";
   const signup = await fetch(`${origin}/api/auth/sign-up/email/`, {

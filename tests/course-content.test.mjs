@@ -4,6 +4,7 @@ import test from "node:test";
 import { normalizeCourseContent } from "../scripts/course-content.mjs";
 
 const courses = JSON.parse(await readFile(new URL("../app/courses/content.json", import.meta.url), "utf8"));
+const foundationsOnline = JSON.parse(await readFile(new URL("../app/courses/foundations-online-content.json", import.meta.url), "utf8"));
 const allowedBlocks = new Set(["paragraph", "heading", "list", "callout", "facts", "profile"]);
 
 test("course bodies use the normalized content schema", () => {
@@ -36,4 +37,12 @@ test("course profile images resolve locally", async () => {
     assert.match(profile.image.src, /^\/media\/courses\/content\//);
     await access(new URL(`../public${profile.image.src}`, import.meta.url));
   }
+});
+
+test("the free foundations course contains the recovered curriculum", () => {
+  assert.equal(foundationsOnline.slug, "cooking-foundations-online");
+  assert.equal(foundationsOnline.sections.length, 9);
+  assert.equal(foundationsOnline.sections.reduce((total, section) => total + section.lessons.length, 0), 92);
+  assert.ok(foundationsOnline.sections.every((section) => section.title.trim() && section.lessons.length));
+  assert.ok(foundationsOnline.sections.flatMap((section) => section.lessons).every((lesson) => lesson.title.trim() && lesson.content.trim()));
 });

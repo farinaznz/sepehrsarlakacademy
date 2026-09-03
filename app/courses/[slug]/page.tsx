@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { and, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CourseCard } from "../../components";
@@ -7,6 +8,10 @@ import { courseContents } from "../content";
 import { CourseCoverSlideshow } from "../CourseCoverSlideshow";
 import { CourseBody } from "../CourseBody";
 import { withBasePath } from "../../site-path";
+import { getDb } from "../../../db";
+import { course as learningCourse, enrollment } from "../../../db/schema";
+import { getCurrentSession } from "../../../lib/session";
+import { subscribeToFreeCourse } from "./actions";
 
 type CoursePageProps = { params: Promise<{ slug: string }> };
 
@@ -21,6 +26,7 @@ export function generateStaticParams() {
 }
 
 export const dynamicParams = false;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: CoursePageProps): Promise<Metadata> {
   const result = getCourse((await params).slug);
@@ -36,6 +42,13 @@ export default async function MigratedCoursePage({ params }: CoursePageProps) {
   const result = getCourse((await params).slug);
   if (!result) notFound();
   const { course, content } = result;
+  const current = await getCurrentSession();
+  const [databaseCourse] = await getDb().select({ id: learningCourse.id, enrollmentMode: learningCourse.enrollmentMode })
+    .from(learningCourse).where(and(eq(learningCourse.slug, course.slug), eq(learningCourse.status, "published"))).limit(1);
+  const [activeEnrollment] = current && databaseCourse ? await getDb().select({ id: enrollment.id }).from(enrollment).where(and(
+    eq(enrollment.userId, current.user.id), eq(enrollment.courseId, databaseCourse.id), eq(enrollment.status, "active"),
+  )).limit(1) : [];
+  const canSelfEnroll = databaseCourse?.enrollmentMode === "self_service";
   const gallery = content.gallery?.length
     ? content.gallery
     : [{ src: content.cover || course.image, alt: content.coverAlt || course.title }];
@@ -72,15 +85,19 @@ export default async function MigratedCoursePage({ params }: CoursePageProps) {
               <p>{content.summary || course.subtitle}</p>
             </div>
             <CourseBody blocks={content.body} />
+            {content.curriculum?.length ? <section className="public-curriculum">
+              <span className="eyebrow">محتوای دوره</span><h2>۹ بخش، ۹۲ درس ساختاریافته</h2>
+              <div>{content.curriculum.map((section, index) => <details key={section.title} open={index === 0}><summary><strong>{section.title}</strong><small>{section.lessons.length} درس</small></summary><ol>{section.lessons.map((lesson) => <li key={lesson}>{lesson}</li>)}</ol></details>)}</div>
+            </section> : null}
           </div>
           <aside className="enroll-card">
             <span className="enroll-label">شهریه دوره</span>
             <div className="enroll-price"><strong>{course.price}</strong></div>
             <p>{course.availability}</p>
-            <Link className="button" href="https://wa.me/989362233949">درخواست ثبت‌نام</Link>
+            {canSelfEnroll ? activeEnrollment ? <Link className="button" href="/dashboard">ورود به دوره</Link> : current ? <form action={subscribeToFreeCourse}><input type="hidden" name="courseSlug" value={course.slug} /><button className="button button-wide" type="submit">ثبت‌نام رایگان و شروع دوره</button></form> : <Link className="button" href={`/login?returnTo=${encodeURIComponent(`/courses/${course.slug}`)}`}>ورود و ثبت‌نام رایگان</Link> : <Link className="button" href="https://wa.me/989362233949">درخواست ثبت‌نام</Link>}
             <Link className="button button-ghost" href="/courses">بازگشت به دوره‌ها</Link>
             <ul><li>{course.format}</li><li>{course.duration}</li><li>{course.lessons}</li><li>{course.level}</li></ul>
-            <small>برای زمان‌بندی و شرایط ثبت‌نام با آکادمی در ارتباط باشید.</small>
+            <small>{canSelfEnroll ? "دسترسی بلافاصله پس از ثبت‌نام فعال می‌شود." : "برای زمان‌بندی و شرایط ثبت‌نام با آکادمی در ارتباط باشید."}</small>
           </aside>
         </div>
       </section>

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Course } from "./data";
-import { MobileMenu } from "./MobileMenu";
 import { withBasePath } from "./site-path";
 
 export function Brand() {
@@ -21,26 +20,6 @@ export function Brand() {
         }}
       />
     </Link>
-  );
-}
-
-export function SiteHeader() {
-  return (
-    <header className="site-header">
-      <div className="container header-inner">
-        <Brand />
-        <nav className="desktop-nav" aria-label="راهبری اصلی">
-          <Link href="/courses">دوره‌ها</Link>
-          <Link href="/journal">مجله</Link>
-          <Link href="/about">درباره آکادمی</Link>
-        </nav>
-        <div className="header-actions">
-          <Link className="text-link desktop-only" href="/login">ورود هنرجویان</Link>
-          <Link className="button button-small" href="/courses">انتخاب دوره</Link>
-          <MobileMenu />
-        </div>
-      </div>
-    </header>
   );
 }
 

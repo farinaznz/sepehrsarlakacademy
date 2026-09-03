@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getDb } from "../../../../db";
 import { course, lesson, lessonComment, lessonNote, lessonProgress, profile } from "../../../../db/schema";
 import { getAccessibleLesson } from "../../../../lib/learning-access";
+import { sanitizeLessonContent } from "../../../../lib/lesson-content";
 import { isLessonReleased, lessonReleaseDate } from "../../../../lib/learning-rules";
 import { requireSession } from "../../../../lib/session";
 import { saveLessonNote, setLessonCompletion, submitLessonComment } from "./actions";
@@ -24,7 +25,7 @@ export default async function ProtectedLessonPage({ params }: { params: Promise<
     }).from(lesson).innerJoin(course, eq(lesson.courseId, course.id))
       .leftJoin(lessonProgress, and(eq(lessonProgress.lessonId, lesson.id), eq(lessonProgress.userId, current.user.id)))
       .where(eq(lesson.id, access.id)).limit(1),
-    db.select({ id: lesson.id, slug: lesson.slug, title: lesson.title, dripDelayDays: lesson.dripDelayDays, progress: lessonProgress.percent })
+    db.select({ id: lesson.id, slug: lesson.slug, title: lesson.title, sectionTitle: lesson.sectionTitle, dripDelayDays: lesson.dripDelayDays, progress: lessonProgress.percent })
       .from(lesson).leftJoin(lessonProgress, and(eq(lessonProgress.lessonId, lesson.id), eq(lessonProgress.userId, current.user.id)))
       .where(and(eq(lesson.courseId, access.courseId), eq(lesson.published, true))).orderBy(asc(lesson.position)),
     db.select({ body: lessonNote.body }).from(lessonNote)
@@ -51,19 +52,26 @@ export default async function ProtectedLessonPage({ params }: { params: Promise<
   const currentIndex = navigation.findIndex((item) => item.id === record.id);
   const previous = navigation.slice(0, currentIndex).reverse().find((item) => item.available);
   const next = navigation.slice(currentIndex + 1).find((item) => item.available);
+  const navigationSections = navigation.reduce<Array<{ title: string; lessons: typeof navigation }>>((sections, item) => {
+    const title = item.sectionTitle || "درس‌های دوره";
+    const latest = sections.at(-1);
+    if (latest?.title === title) latest.lessons.push(item);
+    else sections.push({ title, lessons: [item] });
+    return sections;
+  }, []);
 
   return <section className="protected-lesson section"><div className="container lesson-layout">
     <aside className="lesson-sidebar">
       <Link className="arrow-link" href="/dashboard">→ فضای هنرجویی</Link>
       <h2>{record.courseTitle}</h2>
-      <nav aria-label="درس‌های دوره">{navigation.map((item) => item.available ?
+      <nav aria-label="درس‌های دوره">{navigationSections.map((section) => <section className="lesson-nav-section" key={section.title}><h3>{section.title}</h3>{section.lessons.map((item) => item.available ?
         <Link className={item.id === record.id ? "active" : ""} key={item.id} href={`/learn/${route.courseSlug}/${item.slug}`}><span>{item.progress === 100 ? "✓" : "○"}</span>{item.title}</Link> :
         <div className="locked" key={item.id}><span>◇</span><span>{item.title}<small>{item.releaseAt.toLocaleDateString("fa-IR")}</small></span></div>
-      )}</nav>
+      )}</section>)}</nav>
     </aside>
     <article className="lesson-main">
       <header><span className="eyebrow">{record.courseTitle}</span><h1>{record.title}</h1><p>{record.summary}</p></header>
-      <div className="protected-lesson-content"><p>{record.content}</p></div>
+      <div className="protected-lesson-content lesson-rich-content" dangerouslySetInnerHTML={{ __html: sanitizeLessonContent(record.content) }} />
       <div className="lesson-actions">
         <form action={setLessonCompletion}><input type="hidden" name="lessonId" value={record.id} /><input type="hidden" name="completed" value={record.progress === 100 ? "false" : "true"} /><button className="button" type="submit">{record.progress === 100 ? "بازکردن دوباره درس" : "علامت‌گذاری به‌عنوان تکمیل‌شده"}</button></form>
         <nav>{previous ? <Link href={`/learn/${route.courseSlug}/${previous.slug}`}>→ درس قبلی</Link> : <span />}{next ? <Link href={`/learn/${route.courseSlug}/${next.slug}`}>درس بعدی ←</Link> : <Link href="/dashboard">پایان دوره ←</Link>}</nav>
